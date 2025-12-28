@@ -1,0 +1,110 @@
+[
+    {
+        "id": 1,
+        "title": "Spider-Man: No Way Home",
+        "poster": "https://image.tmdb.org/t/p/original/1g0vD3uWyUMw2p7rBhCnM60unUr.jpg",
+        "backdrop": "https://image.tmdb.org/t/p/original/iQFcwSGbZXMkeyKrxbPnwnRo5fl.jpg",
+        "rating": 8.5,
+        "duration": "2h 28m",
+        "genre": "Action, Adventure",
+        "year": 2021,
+        "age": "T13",
+        "quality": "4K",
+        "description": "Peter Parker is unmasked and no longer able to separate his normal life from the high-stakes of being a super-hero. When he asks for help from Doctor Strange the stakes become even more dangerous, forcing him to discover what it truly means to be Spider-Man.",
+        "genres": [
+            "Action",
+            "Adventure",
+            "Sci-Fi"
+        ]
+    },
+    {
+        "id": 2,
+        "title": "The Batman",
+        "poster": "https://image.tmdb.org/t/p/original/74xTEgt7R36FpoO3pSja9M6pRJV.jpg",
+        "backdrop": "https://image.tmdb.org/t/p/original/b0PlSFdDwbyK0cf5RxwDpaOJQvQ.jpg",
+        "rating": 7.8,
+        "duration": "2h 56m",
+        "genre": "Action, Crime",
+        "year": 2022,
+        "age": "T16",
+        "quality": "4K",
+        "description": "In his second year of fighting crime, Batman uncovers corruption in Gotham City that connects to his own family while facing a serial killer known as the Riddler.",
+        "genres": [
+            "Action",
+            "Crime",
+            "Drama"
+        ]
+    },
+    {
+        "id": 3,
+        "title": "Dune",
+        "poster": "https://image.tmdb.org/t/p/original/d5NXSklfzG0u4MZWpSJobRcrYv.jpg",
+        "backdrop": "https://image.tmdb.org/t/p/original/s1FhiITt6K8sWyZfGvJCTxwPvjE.jpg",
+        "rating": 8.0,
+        "duration": "2h 35m",
+        "genre": "Sci-Fi, Adventure",
+        "year": 2021,
+        "age": "T13",
+        "quality": "4K",
+        "description": "Paul Atreides, a brilliant and gifted young man born into a great destiny beyond his understanding, must travel to the most dangerous planet in the universe to ensure the future of his family and his people.",
+        "genres": [
+            "Sci-Fi",
+            "Adventure",
+            "Drama"
+        ]
+    },
+    {
+        "id": 4,
+        "title": "Avatar: The Way of Water",
+        "poster": "https://image.tmdb.org/t/p/original/t6HIqrRAclMCA60NsSmeqe9AFeb.jpg",
+        "backdrop": "https://image.tmdb.org/t/p/original/198vrF8k7mfQ4FjDJsBmdQcaiyq.jpg",
+        "rating": 7.7,
+        "duration": "3h 12m",
+        "genre": "Sci-Fi, Action",
+        "year": 2022,
+        "age": "T13",
+        "quality": "4K",
+        "description": "Set more than a decade after the events of the first film, Avatar: The Way of Water begins to tell the story of the Sully family, the trouble that follows them, the lengths they go to keep each other safe, the battles they fight to stay alive, and the tragedies they endure.",
+        "genres": [
+            "Sci-Fi",
+            "Action",
+            "Adventure"
+        ]
+    },
+    {
+        "id": 5,
+        "title": "Interstellar",
+        "poster": "https://image.tmdb.org/t/p/original/gEU2QniE6KjbVvPj0pYvO4pOTpB.jpg",
+        "backdrop": "https://image.tmdb.org/t/p/original/xJHokMbljvjADYdit5fK5VQsXEG.jpg",
+        "rating": 8.7,
+        "duration": "2h 49m",
+        "genre": "Sci-Fi, Drama",
+        "year": 2014,
+        "age": "T13",
+        "quality": "4K",
+        "description": "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+        "genres": [
+            "Sci-Fi",
+            "Drama",
+            "Adventure"
+        ]
+    },
+    {
+        "id": 6,
+        "title": "Inception",
+        "poster": "https://image.tmdb.org/t/p/original/edv5CZvfk0KiRMHA2SVpQGbc0oH.jpg",
+        "backdrop": "https://image.tmdb.org/t/p/original/s3TBrRGB1iav7gFOCNx3H31MoES.jpg",
+        "rating": 8.8,
+        "duration": "2h 28m",
+        "genre": "Action, Sci-Fi",
+        "year": 2010,
+        "age": "T13",
+        "quality": "4K",
+        "description": "Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets is offered a chance to regain his old life as payment for a task considered to be impossible: inception, the implantation of another person's idea into a target's subconscious.",
+        "genres": [
+            "Action",
+            "Sci-Fi",
+            "Thriller"
+        ]
+    }
+]

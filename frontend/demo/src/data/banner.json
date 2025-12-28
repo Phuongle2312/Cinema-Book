@@ -1,0 +1,119 @@
+[
+    {
+        "id": 1,
+        "titleImage": "https://static.nutscdn.com/vimg/0-260/0cc46dae414795c7c659d82dd7654823.png",
+        "title": "Chainsaw Man - The Movie: Reze Arc",
+        "image": "https://static.nutscdn.com/vimg/1920-0/eb306939fa7568010872341d862118f1.jpg",
+        "description": "Tiếp nối series anime chuyển thể đình đám, Chainsaw Man lần đầu tiên oanh tạc màn ảnh rộng trong một cuộc phiêu lưu hoành tráng, ngập tràn các phân cảnh hành động. Ở phần trước, ta đã biết Denji từng làm Thợ Săn Quỷ cho yakuza để trả món nợ của cha mẹ nhưng bị họ phản bội...",
+        "rating": "8.4",
+        "quality": "4K",
+        "age": "T18",
+        "year": "2025",
+        "duration": "1h 40m",
+        "genres": [
+            "Hành Động",
+            "Chiếu Rạp",
+            "Anime",
+            "Hoạt Hình",
+            "Kỳ Ảo",
+            "Lãng Mạn"
+        ]
+    },
+    {
+        "id": 2,
+        "titleImage": "https://static.nutscdn.com/vimg/0-260/6334861593eba7187d36dbc06e5fb9f6.png",
+        "title": "Sisu: Road to Revenge",
+        "image": "https://static.nutscdn.com/vimg/1920-0/06decb477f7585cd2519b6666f3110b8.webp",
+        "description": "Tưởng chừng đã được nghỉ hưu, kẻ thù một lần nữa buộc 'già gân' phải trở lại. Khi kẻ thù mới xuất hiện, Atami một lần nữa 'lên gân' đối đầu.",
+        "rating": "7.0",
+        "quality": "4K",
+        "age": "T16",
+        "year": "2023",
+        "duration": "1h 29m",
+        "genres": [
+            "Hành Động",
+            "Chiếu Rạp",
+            "Gay Cấn",
+            "Chiến Tranh"
+        ]
+    },
+    {
+        "id": 3,
+        "titleImage": "https://static.nutscdn.com/vimg/0-260/a180601996b8a32a625f190ca158dee6.png",
+        "title": "Now You See Me 3: Now You Don't",
+        "image": "https://static.nutscdn.com/vimg/1920-0/951859ef2ec65a3be41fa36f156365b4.webp",
+        "description": "Sau nhiều năm vắng bóng, Tứ kỵ sĩ huyền thoại của Phi Vụ Thế Kỷ chính thức trở lại với một nhiệm vụ hoàn toàn mới: phi vụ kim cương liều lĩnh nhất trong sự nghiệp. Nhưng lần này, họ không đơn độc, đồng hành cùng nhóm là thế hệ ảo thuật gia mới gồm Greenblatt, Smith và...",
+        "rating": "6.1",
+        "quality": "4K",
+        "age": "T16",
+        "year": "2025",
+        "duration": "1h 52m",
+        "genres": [
+            "Chính Kịch",
+            "Chiếu Rạp",
+            "Gay Cấn",
+            "Hình Sự",
+            "Bí Ẩn",
+            "Phiêu Lưu"
+        ]
+    },
+    {
+        "id": 4,
+        "titleImage": "https://static.nutscdn.com/vimg/0-260/93099e0ce5d0450f96ad1731aecf1348.png",
+        "title": "Zootopia 2",
+        "image": "https://static.nutscdn.com/vimg/1920-0/17338b547a5ebff5a0e35b902dacfa9d.webp",
+        "description": "Sau nhiều năm vắng bóng, Tứ kỵ sĩ huyền thoại của Phi Vụ Thế Kỷ chính thức trở lại với một nhiệm vụ hoàn toàn mới: phi vụ kim cương liều lĩnh nhất trong sự nghiệp. Nhưng lần này, họ không đơn độc, đồng hành cùng nhóm là thế hệ ảo thuật gia mới gồm Greenblatt, Smith và...",
+        "rating": "6.1",
+        "quality": "4K",
+        "age": "T16",
+        "year": "2025",
+        "duration": "1h 50m",
+        "genres": [
+            "Gia đình",
+            "Chiếu Rạp",
+            "Thiếu nhi",
+            "Hài",
+            "Hoạt Hình",
+            "Giả tưởng"
+        ]
+    },
+    {
+        "id": 5,
+        "titleImage": "https://static.nutscdn.com/vimg/0-260/cd9feb45f86cd0e65ffeac94fd6a7b15.png",
+        "title": "Wake Up Dead Man: A Knives Out Mystery",
+        "image": "https://static.nutscdn.com/vimg/1920-0/cd4ef646a4fa3f0954f04d5e315a0ef2.webp",
+        "description": "Thám tử Benoit Blanc bắt tay với vị linh mục trẻ nhiệt huyết để điều tra một tội ác hoàn toàn bất khả thi tại nhà thờ ở thị trấn nhỏ có quá khứ đen tối.",
+        "rating": "7.4",
+        "quality": "4K",
+        "age": "T16",
+        "year": "2025",
+        "duration": "2h 25m",
+        "genres": [
+            "Chiếu Rạp",
+            "Hình Sự",
+            "Bí Ẩn",
+            "Hài",
+            "Phiêu Lưu"
+        ]
+    },
+    {
+        "id": 6,
+        "titleImage": "https://static.nutscdn.com/vimg/0-260/b7fd897464cd8c3f063447b7e48a041f.png",
+        "title": "Wike: For Good",
+        "image": "https://static.nutscdn.com/vimg/1920-0/213eb724175dfd71ccfed2ab74dc291c.webp",
+        "description": "Thám tử Benoit Blanc bắt tay với vị linh mục trẻ nhiệt huyết để điều tra một tội ác hoàn toàn bất khả thi tại nhà thờ ở thị trấn nhỏ có quá khứ đen tối.",
+        "rating": "7.4",
+        "quality": "4K",
+        "age": "T16",
+        "year": "2025",
+        "duration": "2h 25m",
+        "genres": [
+            "Chiếu Rạp",
+            "Nhạc Kịch",
+            "Thiếu Nhi",
+            "Kỳ Ảo",
+            "Phép Thuật",
+            "Lãng Mạn"
+        ]
+    }
+]
