@@ -6,9 +6,10 @@ import Footer from '../components/Footer';
 import './Home.css';
 import { ChevronRight } from 'lucide-react';
 import bannerData from '../data/banner.json';
+import movieData from '../data/movies.json';
 
 const Home = () => {
-    const nowShowingMovies = bannerData;
+    const nowShowingMovies = movieData;
 
     return (
         <div className="home-page">
