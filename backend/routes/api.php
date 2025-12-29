@@ -31,6 +31,12 @@ Route::get('/test', function () {
 // ============================================
 // AUTHENTICATION ROUTES
 // ============================================
+
+// Shorthand routes (dễ nhớ hơn)
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
+
+// Full routes với prefix 'auth'
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);

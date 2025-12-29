@@ -20,8 +20,8 @@ class Booking extends Model
         'booking_code',
         'total_seats',
         'seats_total',
-        'combo_total',
-        'total_price',
+        'combo_total', // Tổng giá combo
+        'total_price', // Tổng giá (ghế + combo)
         'status',
         'expires_at',
         'confirmed_at',
