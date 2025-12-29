@@ -16,10 +16,10 @@ try {
     // Bảng cần có
     $requiredTables = [
         'users', 'genres', 'languages', 'cast',
-        'theaters', 'screens', 'movies',
+        'theaters', 'rooms', 'movies',
         'movie_genre', 'movie_language', 'movie_cast',
         'showtimes', 'seats',
-        'bookings', 'booking_seats', 'seat_locks',
+        'bookings', 'booking_details', 'booking_seats', 'seat_locks',
         'transactions', 'reviews'
     ];
     

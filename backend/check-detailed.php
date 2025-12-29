@@ -22,7 +22,7 @@ try {
         'languages' => 'Ngôn ngữ',
         'cast' => 'Diễn viên/Đạo diễn',
         'theaters' => 'Rạp chiếu',
-        'screens' => 'Phòng chiếu',
+        'rooms' => 'Phòng chiếu',
         'movies' => 'Phim',
         
         // Pivot
@@ -38,7 +38,7 @@ try {
         
         // Transaction
         'bookings' => 'Đơn hàng',
-        'tickets' => 'Chi tiết vé - YÊU CẦU MỚI',
+        'booking_details' => 'Chi tiết vé',
         'booking_seats' => 'Ghế đã đặt',
         'seat_locks' => 'Khóa ghế tạm',
         'transactions' => 'Giao dịch thanh toán',
