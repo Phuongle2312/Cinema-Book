@@ -1,0 +1,241 @@
+.success-page {
+    min-height: 100vh;
+    background-color: var(--bg-dark);
+    color: white;
+    padding-bottom: 60px;
+}
+
+.success-container {
+    padding-top: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.success-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.success-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 1rem 0 0.5rem;
+    color: white;
+}
+
+.success-header p {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ticket-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    width: 100%;
+    max-width: 400px;
+}
+
+/* E-Ticket Design */
+.e-ticket {
+    width: 100%;
+    background: white;
+    color: #1a1a1a;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.ticket-header {
+    background: var(--primary);
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+}
+
+.ticket-brand {
+    font-weight: 800;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+}
+
+.ticket-brand span {
+    color: white;
+    /* Keep white on red background */
+}
+
+.ticket-id {
+    font-family: monospace;
+    font-weight: 700;
+}
+
+.ticket-body {
+    padding: 1.5rem;
+}
+
+.ticket-poster {
+    width: 100%;
+    height: 180px;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.ticket-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 20%;
+}
+
+.ticket-info h2 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 1.2rem;
+    line-height: 1.3;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.8rem;
+    font-size: 0.95rem;
+    border-bottom: 1px dashed #e5e5e5;
+    padding-bottom: 0.5rem;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row .label {
+    color: #666;
+    font-weight: 500;
+}
+
+.info-row .value {
+    font-weight: 600;
+    text-align: right;
+    max-width: 65%;
+}
+
+.info-row .value.hl {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.ticket-qr-section {
+    background: #f8f8f8;
+    padding: 1.5rem;
+    text-align: center;
+    border-top: 2px dashed #ddd;
+    position: relative;
+}
+
+.qr-code {
+    width: 140px;
+    height: 140px;
+    margin: 0 auto 0.8rem;
+    display: block;
+}
+
+.ticket-qr-section p {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.ticket-footer {
+    background: #111;
+    color: white;
+    padding: 1rem 1.5rem;
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: center;
+}
+
+.payment-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    opacity: 0.8;
+}
+
+/* Ticket Notches */
+.ticket-circles-top,
+.ticket-circles-bottom {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: var(--bg-dark);
+    border-radius: 50%;
+    z-index: 10;
+}
+
+.ticket-circles-top {
+    top: 50%;
+    /* Adjust based on design layout */
+    left: -15px;
+    transform: translateY(-50%);
+}
+
+.ticket-circles-bottom {
+    top: 50%;
+    right: -15px;
+    transform: translateY(-50%);
+}
+
+/* Actions */
+.ticket-actions {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+}
+
+.btn-action {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.8rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-action:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-home {
+    color: var(--text-muted);
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.btn-home:hover {
+    color: var(--primary);
+}

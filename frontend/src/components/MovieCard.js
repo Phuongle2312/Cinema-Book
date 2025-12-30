@@ -1,35 +1,42 @@
 import React from 'react';
 import { Star, Play, Calendar } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import './MovieCard.css';
 
 const MovieCard = ({ movie }) => {
     return (
         <div className="movie-card">
-            <div className="movie-poster">
+            <Link to={`/movies/${movie.id}`} className="movie-poster">
                 <img src={movie.poster} alt={movie.title} />
                 <div className="movie-overlay">
-                    <button className="btn-play">
-                        <Play fill="white" size={24} />
+                    <button className="btn-play-overlay">
+                        <Play fill="black" size={24} color="black" />
                     </button>
-                    <div className="movie-info-quick">
+                    <div className="overlay-info">
                         <span className="rating">
-                            <Star size={16} fill="#ffd700" color="#ffd700" />
+                            <Star size={14} fill="#ffd700" color="#ffd700" />
                             {movie.rating}
                         </span>
                         <span className="duration">{movie.duration}</span>
                     </div>
                 </div>
-            </div>
+            </Link>
             <div className="movie-details">
-                <h3 className="movie-title">{movie.title}</h3>
+                <Link to={`/movies/${movie.id}`}>
+                    <h3 className="movie-title">{movie.title}</h3>
+                </Link>
                 <div className="movie-meta">
-                    <span className="genre">{movie.genre}</span>
+                    <span className="genre">
+                        {movie.genre}
+                        <span className="separator">, </span>
+                        Chiếu Rạp
+                    </span>
                     <span className="year">
                         <Calendar size={14} />
                         {movie.year}
                     </span>
                 </div>
-                <button className="btn-book">Book Now</button>
+                <Link to={`/booking/movie/${movie.id}`} className="btn-book">Book Now</Link>
             </div>
         </div>
     );

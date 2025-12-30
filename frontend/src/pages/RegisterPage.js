@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, Popcorn, User, Phone } from 'lucide-react';
 import './LoginPage.css'; // Reusing some base styles
@@ -17,6 +17,10 @@ const RegisterPage = () => {
     const [error, setError] = useState('');
     const { register } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Redirect to the page user tried to visit or home
+    const from = location.state?.from?.pathname || "/";
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -39,8 +43,8 @@ const RegisterPage = () => {
                 password_confirmation: formData.confirmPassword,
                 phone: formData.phone
             });
-            // Redirect to home or login page after successful registration
-            navigate('/');
+            // Redirect to the page user tried to visit or home after successful registration
+            navigate(from, { replace: true });
         } catch (err) {
             setError(err.message || 'Registration failed. Please try again.');
             if (err.errors) {

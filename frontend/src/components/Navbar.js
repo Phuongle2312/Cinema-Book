@@ -15,6 +15,17 @@ const Navbar = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    const [searchQuery, setSearchQuery] = useState('');
+    const navigate = useNavigate();
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            navigate(`/movies?q=${encodeURIComponent(searchQuery)}`);
+            setSearchQuery('');
+        }
+    };
+
     return (
         <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
             <div className="container nav-content">
@@ -24,7 +35,7 @@ const Navbar = () => {
                         <span>CINE<span>BOOK</span></span>
                     </Link>
                     <ul className="nav-links">
-                        <li><Link to="/" className="active">Movies</Link></li>
+                        <li><Link to="/movies" className="active">Movies</Link></li>
                         <li><a href="#">Cinemas</a></li>
                         <li><a href="#">Offers</a></li>
                         <li><a href="#">Events</a></li>
@@ -32,10 +43,15 @@ const Navbar = () => {
                 </div>
 
                 <div className="nav-right">
-                    <div className="search-box">
-                        <Search size={20} />
-                        <input type="text" placeholder="Search movies..." />
-                    </div>
+                    <form className="search-box" onSubmit={handleSearch}>
+                        <Search size={20} className="search-icon" onClick={handleSearch} style={{ cursor: 'pointer' }} />
+                        <input
+                            type="text"
+                            placeholder="Search movies..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </form>
                     <Link to="/login" className="btn-login">
                         <User size={20} />
                         <span>Login</span>
