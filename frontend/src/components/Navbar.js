@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { Search, Popcorn, User, Menu, X } from 'lucide-react';
 import './Navbar.css';
 
@@ -35,10 +35,10 @@ const Navbar = () => {
                         <span>CINE<span>BOOK</span></span>
                     </Link>
                     <ul className="nav-links">
-                        <li><Link to="/movies" className="active">Movies</Link></li>
-                        <li><a href="#">Cinemas</a></li>
-                        <li><a href="#">Offers</a></li>
-                        <li><a href="#">Events</a></li>
+                        <li><NavLink to="/movies">Movies</NavLink></li>
+                        <li><NavLink to="/cinemas">Cinemas</NavLink></li>
+                        <li><NavLink to="/offers">Offers</NavLink></li>
+                        <li><NavLink to="/events">Events</NavLink></li>
                     </ul>
                 </div>
 
@@ -65,10 +65,10 @@ const Navbar = () => {
             {/* Mobile Menu */}
             <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
                 <ul>
-                    <li><Link to="/" onClick={() => setIsMobileMenuOpen(false)}>Movies</Link></li>
-                    <li><a href="#" onClick={() => setIsMobileMenuOpen(false)}>Cinemas</a></li>
-                    <li><a href="#" onClick={() => setIsMobileMenuOpen(false)}>Offers</a></li>
-                    <li><a href="#" onClick={() => setIsMobileMenuOpen(false)}>Events</a></li>
+                    <li><NavLink to="/movies" onClick={() => setIsMobileMenuOpen(false)}>Movies</NavLink></li>
+                    <li><NavLink to="/cinemas" onClick={() => setIsMobileMenuOpen(false)}>Cinemas</NavLink></li>
+                    <li><NavLink to="/offers" onClick={() => setIsMobileMenuOpen(false)}>Offers</NavLink></li>
+                    <li><NavLink to="/events" onClick={() => setIsMobileMenuOpen(false)}>Events</NavLink></li>
                     <li><Link to="/login" className="btn-login-mobile" onClick={() => setIsMobileMenuOpen(false)}>Login</Link></li>
                 </ul>
             </div>

@@ -124,21 +124,24 @@ export const MOCK_SHOWTIMES = [
 ];
 
 export const generateMockSeats = () => {
-    const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+    const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
     const seatsPerRow = 12;
     const seatMap = {};
     const allSeats = [];
 
     rows.forEach(row => {
         seatMap[row] = [];
-        for (let i = 1; i <= seatsPerRow; i++) {
+        // Row H is for Couple seats (fewer seats)
+        const count = row === 'H' ? 6 : seatsPerRow;
+
+        for (let i = 1; i <= count; i++) {
             const seat = {
                 seat_id: `${row}${i}`,
                 row: row,
                 number: i,
                 status: Math.random() > 0.85 ? 'booked' : 'available',
-                seat_type: { name: row === 'G' ? 'VIP' : 'Standard' },
-                extra_price: row === 'G' ? 20000 : 0
+                seat_type: { name: row === 'G' ? 'VIP' : (row === 'H' ? 'Couple' : 'Standard') },
+                extra_price: row === 'G' ? 20000 : (row === 'H' ? 50000 : 0)
             };
             seatMap[row].push(seat);
             allSeats.push(seat);

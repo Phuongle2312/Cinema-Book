@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      * Bổ sung 6 bảng còn thiếu cho Cinema Booking System
@@ -28,23 +27,23 @@ return new class extends Migration
             $table->id('pricing_rule_id');
             $table->string('name'); // Giá cuối tuần, Giá lễ, Giá giờ vàng
             $table->enum('rule_type', ['time_based', 'day_based', 'seat_based', 'movie_based'])->default('time_based');
-            
+
             // Điều kiện áp dụng (JSON)
             // time_based: {"start_time": "18:00", "end_time": "22:00"}
             // day_based: {"days": ["saturday", "sunday"]}
             // seat_based: {"seat_type_codes": ["vip", "couple"]}
             // movie_based: {"movie_ids": [1, 2, 3]}
             $table->json('conditions');
-            
+
             // Giá trị điều chỉnh
             $table->enum('adjustment_type', ['fixed', 'percentage'])->default('fixed');
             $table->decimal('adjustment_value', 10, 2); // 20000 (fixed) hoặc 15.5 (percentage)
-            
+
             $table->integer('priority')->default(0); // Độ ưu tiên (số càng cao càng ưu tiên)
             $table->boolean('is_active')->default(true);
             $table->date('valid_from')->nullable();
             $table->date('valid_to')->nullable();
-            
+
             $table->timestamps();
         });
 
@@ -55,28 +54,12 @@ return new class extends Migration
                 if (Schema::hasColumn('seats', 'type')) {
                     $table->dropColumn('type');
                 }
-                
+
                 // Thêm foreign key đến seat_types
                 $table->foreignId('seat_type_id')->nullable()->after('number')
-                      ->constrained('seat_types', 'seat_type_id')->onDelete('set null');
+                    ->constrained('seat_types', 'seat_type_id')->onDelete('set null');
             });
         }
-
-        // 4. Bảng Seat Locks - Khóa ghế tạm thời (5-6 phút)
-        Schema::create('seat_locks', function (Blueprint $table) {
-            $table->id('lock_id');
-            $table->foreignId('seat_id')->constrained('seats', 'seat_id')->onDelete('cascade');
-            $table->foreignId('showtime_id')->constrained('showtimes', 'showtime_id')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            
-            $table->timestamp('locked_at');
-            $table->timestamp('expires_at');
-            
-            $table->timestamps();
-            
-            // Một ghế chỉ bị khóa 1 lần cho 1 suất chiếu
-            $table->unique(['showtime_id', 'seat_id']);
-        });
 
         // 5. Bảng Tickets - Chi tiết vé (thay thế booking_seats)
         Schema::create('tickets', function (Blueprint $table) {
@@ -84,57 +67,25 @@ return new class extends Migration
             $table->foreignId('booking_id')->constrained('bookings', 'booking_id')->onDelete('cascade');
             $table->foreignId('seat_id')->constrained('seats', 'seat_id')->onDelete('cascade');
             $table->foreignId('showtime_id')->constrained('showtimes', 'showtime_id')->onDelete('cascade');
-            
+
             $table->string('ticket_code', 30)->unique(); // Mã vé: TK20251222001
-            
+
             // Giá vé chi tiết
             $table->decimal('base_price', 10, 0); // Giá gốc từ showtime
             $table->decimal('seat_extra_price', 10, 0)->default(0); // Phụ thu loại ghế
             $table->decimal('dynamic_price_adjustment', 10, 0)->default(0); // Điều chỉnh từ pricing rules
             $table->decimal('final_price', 10, 0); // Tổng giá cuối cùng
-            
+
             // Thông tin giá áp dụng (JSON) - để tracking
             $table->json('applied_pricing_rules')->nullable();
-            
+
             $table->enum('status', ['valid', 'used', 'cancelled', 'expired'])->default('valid');
             $table->timestamp('used_at')->nullable();
-            
+
             $table->timestamps();
-            
+
             // Một ghế chỉ có 1 vé cho 1 suất chiếu
             $table->unique(['showtime_id', 'seat_id']);
-        });
-
-        // 6. Bảng Transactions - Giao dịch thanh toán
-        Schema::create('transactions', function (Blueprint $table) {
-            $table->id('transaction_id');
-            $table->foreignId('booking_id')->constrained('bookings', 'booking_id')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            
-            $table->string('transaction_code', 30)->unique(); // Mã giao dịch
-            $table->decimal('amount', 10, 0); // Số tiền
-            $table->enum('payment_method', ['cash', 'credit_card', 'momo', 'zalopay', 'vnpay'])->default('cash');
-            $table->enum('status', ['pending', 'success', 'failed', 'refunded'])->default('pending');
-            
-            $table->text('payment_details')->nullable(); // JSON: thông tin từ cổng thanh toán
-            $table->timestamp('paid_at')->nullable();
-            
-            $table->timestamps();
-        });
-
-        // 7. Bảng Reviews - Đánh giá phim
-        Schema::create('reviews', function (Blueprint $table) {
-            $table->id('review_id');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('movie_id')->constrained('movies', 'movie_id')->onDelete('cascade');
-            
-            $table->integer('rating'); // 1-10 hoặc 1-5
-            $table->text('comment')->nullable();
-            
-            $table->timestamps();
-            
-            // Mỗi user chỉ đánh giá 1 lần cho 1 phim
-            $table->unique(['user_id', 'movie_id']);
         });
     }
 
@@ -147,7 +98,7 @@ return new class extends Migration
         Schema::dropIfExists('transactions');
         Schema::dropIfExists('tickets');
         Schema::dropIfExists('seat_locks');
-        
+
         // Rollback seats table modification
         if (Schema::hasTable('seats')) {
             Schema::table('seats', function (Blueprint $table) {
@@ -157,7 +108,7 @@ return new class extends Migration
                 }
             });
         }
-        
+
         Schema::dropIfExists('pricing_rules');
         Schema::dropIfExists('seat_types');
     }

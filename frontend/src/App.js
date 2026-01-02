@@ -9,6 +9,10 @@ import { AuthProvider } from './context/AuthContext';
 
 import MovieDetails from './pages/MovieDetails';
 import Movies from './pages/Movies';
+import Cinemas from './pages/Cinemas';
+import Offers from './pages/Offers';
+import Events from './pages/Events';
+import PromotionDetails from './pages/PromotionDetails';
 import Booking from './pages/Booking';
 import Payment from './pages/Payment';
 import BookingSuccess from './pages/BookingSuccess';
@@ -26,6 +30,10 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/movies" element={<Movies />} />
             <Route path="/movies/:id" element={<MovieDetails />} />
+            <Route path="/cinemas" element={<Cinemas />} />
+            <Route path="/offers" element={<Offers />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/promotion/:id" element={<PromotionDetails />} />
 
             <Route path="/booking/movie/:movieId" element={<Booking />} />
             <Route path="/payment/:bookingId" element={<Payment />} />

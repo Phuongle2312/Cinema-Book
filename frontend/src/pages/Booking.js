@@ -303,6 +303,7 @@ const Booking = () => {
 
                                         // Specific types
                                         if (seat.seat_type?.name === 'VIP') statusClass += ' vip';
+                                        else if (seat.seat_type?.name === 'Couple') statusClass += ' couple';
                                         else statusClass += ' standard';
 
                                         return (
@@ -325,8 +326,9 @@ const Booking = () => {
                     <div className="seat-legend">
                         <div className="legend-item"><div className="legend-box seat standard"></div> Available</div>
                         <div className="legend-item"><div className="legend-box seat selected"></div> Selected</div>
-                        <div className="legend-item"><div className="legend-box seat occupied"></div> Booked</div>
+                        <div className="legend-item"><div className="legend-box seat booked"></div> Booked</div>
                         <div className="legend-item"><div className="legend-box seat vip"></div> VIP</div>
+                        <div className="legend-item"><div className="legend-box seat couple"></div> Couple</div>
                     </div>
 
                     {/* Footer Bar */}
