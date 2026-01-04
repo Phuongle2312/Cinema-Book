@@ -1,40 +1,83 @@
-import { MOCK_MOVIES } from './mockData';
+import api from './api';
 
 const movieService = {
     // Phim nổi bật/Thịnh hành
     getFeaturedMovies: async () => {
-        return { success: true, data: MOCK_MOVIES.filter(m => m.status === 'now_showing').slice(0, 10) };
+        try {
+            const response = await api.get('/movies/featured');
+            return response.data;
+        } catch (error) {
+            console.error('Get featured movies error:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể lấy danh sách phim nổi bật',
+                data: []
+            };
+        }
     },
 
     // Danh sách phim
     getMovies: async (params = {}) => {
-        return { success: true, data: MOCK_MOVIES };
+        try {
+            const response = await api.get('/movies', { params });
+            return response.data;
+        } catch (error) {
+            console.error('Get movies error:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể lấy danh sách phim',
+                data: []
+            };
+        }
     },
 
     // Chi tiết phim
     getMovieById: async (id) => {
-        const movie = MOCK_MOVIES.find(m => m.movie_id === parseInt(id));
-        return { success: true, data: movie || MOCK_MOVIES[0] };
+        try {
+            const response = await api.get(`/movies/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error('Get movie details error:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể lấy thông tin phim',
+                data: null
+            };
+        }
     },
 
     // Tìm kiếm
     searchMovies: async (query) => {
-        const filtered = MOCK_MOVIES.filter(m =>
-            m.title.toLowerCase().includes(query.toLowerCase())
-        );
-        return { success: true, data: filtered };
+        try {
+            const response = await api.get('/movies/search', { 
+                params: { q: query } 
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Search movies error:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Tìm kiếm thất bại',
+                data: []
+            };
+        }
     },
 
     // Bộ lọc
     filterMovies: async (filters) => {
-        let filtered = [...MOCK_MOVIES];
-        if (filters.genre) {
-            filtered = filtered.filter(m => m.genres.some(g => g.name === filters.genre));
+        try {
+            const response = await api.get('/movies/filter', { 
+                params: filters 
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Filter movies error:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Lọc phim thất bại',
+                data: []
+            };
         }
-        if (filters.status) {
-            filtered = filtered.filter(m => m.status === filters.status);
-        }
-        return { success: true, data: filtered };
     }
 };
 
