@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cinema Booking API Tester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .api-group {
+            margin-bottom: 20px;
+        }
+
+        .api-group h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f0f4ff;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .api-group h3:hover {
+            background: #e0e8ff;
+        }
+
+        .api-list {
+            padding-left: 15px;
+        }
+
+        .api-item {
+            padding: 8px 12px;
+            margin: 5px 0;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+
+        .api-item:hover {
+            background: #f0f4ff;
+            transform: translateX(5px);
+        }
+
+        .api-item.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .method {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8em;
+            margin-right: 8px;
+        }
+
+        .method.get {
+            background: #10b981;
+            color: white;
+        }
+
+        .method.post {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .method.put {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .method.delete {
+            background: #ef4444;
+            color: white;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+        }
+
+        .test-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .response-section {
+            margin-top: 20px;
+        }
+
+        .response-box {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .token-display {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .token-display strong {
+            color: #856404;
+        }
+
+        .token-display code {
+            background: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: block;
+            margin-top: 5px;
+            word-break: break-all;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .info-box {
+            background: #e0f2fe;
+            border-left: 4px solid #0284c7;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .info-box h4 {
+            color: #0284c7;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            color: #075985;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Cinema Booking API Tester</h1>
+            <p>Test tất cả các API endpoints của hệ thống đặt vé xem phim</p>
+        </div>
+
+        <div class="main-grid">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <h3 style="margin-bottom: 15px; color: #333;">📋 API Endpoints</h3>
+
+                <div class="api-group">
+                    <h3>🔐 Authentication</h3>
+                    <div class="api-list">
+                        <div class="api-item" onclick="loadAPI('register')">
+                            <span class="method post">POST</span> Register
+                        </div>
+                        <div class="api-item" onclick="loadAPI('login')">
+                            <span class="method post">POST</span> Login
+                        </div>
+                        <div class="api-item" onclick="loadAPI('forgot-password')">
+                            <span class="method post">POST</span> Forgot Password
+                        </div>
+                        <div class="api-item" onclick="loadAPI('reset-password')">
+                            <span class="method post">POST</span> Reset Password
+                        </div>
+                        <div class="api-item" onclick="loadAPI('logout')">
+                            <span class="method post">POST</span> Logout
+                        </div>
+                    </div>
+                </div>
+
+                <div class="api-group">
+                    <h3>🎥 Movies</h3>
+                    <div class="api-list">
+                        <div class="api-item" onclick="loadAPI('movies')">
+                            <span class="method get">GET</span> List Movies
+                        </div>
+                        <div class="api-item" onclick="loadAPI('movies-featured')">
+                            <span class="method get">GET</span> Featured Movies
+                        </div>
+                        <div class="api-item" onclick="loadAPI('movies-search')">
+                            <span class="method get">GET</span> Search Movies
+                        </div>
+                        <div class="api-item" onclick="loadAPI('movie-detail')">
+                            <span class="method get">GET</span> Movie Detail
+                        </div>
+                    </div>
+                </div>
+
+                <div class="api-group">
+                    <h3>⭐ Reviews</h3>
+                    <div class="api-list">
+                        <div class="api-item" onclick="loadAPI('reviews-list')">
+                            <span class="method get">GET</span> List Reviews
+                        </div>
+                        <div class="api-item" onclick="loadAPI('reviews-create')">
+                            <span class="method post">POST</span> Create Review
+                        </div>
+                    </div>
+                </div>
+
+                <div class="api-group">
+                    <h3>🔔 Notifications</h3>
+                    <div class="api-list">
+                        <div class="api-item" onclick="loadAPI('notifications')">
+                            <span class="method get">GET</span> List Notifications
+                        </div>
+                        <div class="api-item" onclick="loadAPI('notifications-read')">
+                            <span class="method post">POST</span> Mark as Read
+                        </div>
+                    </div>
+                </div>
+
+                <div class="api-group">
+                    <h3>🎁 Promotions</h3>
+                    <div class="api-list">
+                        <div class="api-item" onclick="loadAPI('promotions')">
+                            <span class="method get">GET</span> List Promotions
+                        </div>
+                        <div class="api-item" onclick="loadAPI('promotions-validate')">
+                            <span class="method post">POST</span> Validate Code
+                        </div>
+                    </div>
+                </div>
+
+                <div class="api-group">
+                    <h3>👤 User Profile</h3>
+                    <div class="api-list">
+                        <div class="api-item" onclick="loadAPI('profile')">
+                            <span class="method get">GET</span> Get Profile
+                        </div>
+                        <div class="api-item" onclick="loadAPI('profile-update')">
+                            <span class="method put">PUT</span> Update Profile
+                        </div>
+                    </div>
+                </div>
+
+                <div class="api-group">
+                    <h3>👨‍💼 Admin - Movies</h3>
+                    <div class="api-list">
+                        <div class="api-item" onclick="loadAPI('admin-movies')">
+                            <span class="method get">GET</span> List All Movies
+                        </div>
+                        <div class="api-item" onclick="loadAPI('admin-movies-create')">
+                            <span class="method post">POST</span> Create Movie
+                        </div>
+                        <div class="api-item" onclick="loadAPI('admin-movies-update')">
+                            <span class="method put">PUT</span> Update Movie
+                        </div>
+                        <div class="api-item" onclick="loadAPI('admin-movies-delete')">
+                            <span class="method delete">DELETE</span> Delete Movie
+                        </div>
+                    </div>
+                </div>
+
+                <div class="api-group">
+                    <h3>👨‍💼 Admin - Reviews</h3>
+                    <div class="api-list">
+                        <div class="api-item" onclick="loadAPI('admin-reviews')">
+                            <span class="method get">GET</span> List All Reviews
+                        </div>
+                        <div class="api-item" onclick="loadAPI('admin-reviews-approve')">
+                            <span class="method put">PUT</span> Approve Review
+                        </div>
+                        <div class="api-item" onclick="loadAPI('admin-reviews-delete')">
+                            <span class="method delete">DELETE</span> Delete Review
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <div id="token-section" class="token-display" style="display: none;">
+                    <strong>🔑 Token đã lưu:</strong>
+                    <code id="saved-token"></code>
+                    <button class="btn btn-secondary" style="margin-top: 10px;" onclick="clearToken()">Xóa
+                        Token</button>
+                </div>
+
+                <div id="api-content">
+                    <div class="info-box">
+                        <h4>👋 Chào mừng đến với Cinema Booking API Tester!</h4>
+                        <p>Chọn một API endpoint từ menu bên trái để bắt đầu test.</p>
+                        <p><strong>Lưu ý:</strong> Các API có khóa 🔒 yêu cầu authentication. Hãy đăng nhập trước để lấy
+                            token.</p>
+                    </div>
+                </div>
+
+                <div id="response-section" class="response-section" style="display: none;">
+                    <h3>📤 Response</h3>
+                    <div id="response-status"></div>
+                    <div id="response-box" class="response-box"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        let currentToken = localStorage.getItem('api_token') || '';
+
+        if (currentToken) {
+            document.getElementById('token-section').style.display = 'block';
+            document.getElementById('saved-token').textContent = currentToken;
+        }
+
+        function clearToken() {
+            localStorage.removeItem('api_token');
+            currentToken = '';
+            document.getElementById('token-section').style.display = 'none';
+            alert('Token đã được xóa!');
+        }
+
+        function saveToken(token) {
+            currentToken = token;
+            localStorage.setItem('api_token', token);
+            document.getElementById('token-section').style.display = 'block';
+            document.getElementById('saved-token').textContent = token;
+        }
+
+        async function callAPI(method, endpoint, data = null, requiresAuth = false) {
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+
+            if (requiresAuth && currentToken) {
+                headers['Authorization'] = `Bearer ${currentToken}`;
+            }
+
+            const options = {
+                method: method,
+                headers: headers
+            };
+
+            if (data && (method === 'POST' || method === 'PUT')) {
+                options.body = JSON.stringify(data);
+            }
+
+            try {
+                const response = await fetch(API_BASE + endpoint, options);
+                const result = await response.json();
+
+                displayResponse(response.status, result);
+
+                // Auto-save token if login/register successful
+                if ((endpoint.includes('login') || endpoint.includes('register')) && result.data && result.data.token) {
+                    saveToken(result.data.token);
+                }
+
+                return result;
+            } catch (error) {
+                displayResponse(0, { error: error.message });
+            }
+        }
+
+        function displayResponse(status, data) {
+            const responseSection = document.getElementById('response-section');
+            const responseStatus = document.getElementById('response-status');
+            const responseBox = document.getElementById('response-box');
+
+            responseSection.style.display = 'block';
+
+            const statusClass = status >= 200 && status < 300 ? 'status-success' : 'status-error';
+            responseStatus.innerHTML = `<span class="status-badge ${statusClass}">Status: ${status}</span>`;
+            responseBox.textContent = JSON.stringify(data, null, 2);
+
+            responseSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function loadAPI(apiName) {
+            // Remove active class from all items
+            document.querySelectorAll('.api-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Add active class to clicked item
+            event.target.closest('.api-item').classList.add('active');
+
+            const content = document.getElementById('api-content');
+            let html = '';
+
+            switch (apiName) {
+                case 'register':
+                    html = `
+                        <div class="test-section">
+                            <h2>📝 Đăng ký tài khoản</h2>
+                            <div class="info-box">
+                                <p><strong>Endpoint:</strong> POST /api/auth/register</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Tên:</label>
+                                <input type="text" id="reg_name" value="Nguyễn Văn A">
+                            </div>
+                            <div class="form-group">
+                                <label>Email:</label>
+                                <input type="email" id="reg_email" value="user@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Mật khẩu:</label>
+                                <input type="password" id="reg_password" value="password123">
+                            </div>
+                            <div class="form-group">
+                                <label>Xác nhận mật khẩu:</label>
+                                <input type="password" id="reg_password_confirmation" value="password123">
+                            </div>
+                            <div class="form-group">
+                                <label>Số điện thoại (optional):</label>
+                                <input type="text" id="reg_phone" value="0123456789">
+                            </div>
+                            <button class="btn btn-primary" onclick="testRegister()">Gửi Request</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'login':
+                    html = `
+                        <div class="test-section">
+                            <h2>🔐 Đăng nhập</h2>
+                            <div class="info-box">
+                                <p><strong>Endpoint:</strong> POST /api/auth/login</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Email:</label>
+                                <input type="email" id="login_email" value="user@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Mật khẩu:</label>
+                                <input type="password" id="login_password" value="password123">
+                            </div>
+                            <button class="btn btn-primary" onclick="testLogin()">Đăng nhập</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'forgot-password':
+                    html = `
+                        <div class="test-section">
+                            <h2>🔑 Quên mật khẩu</h2>
+                            <div class="info-box">
+                                <p><strong>Endpoint:</strong> POST /api/auth/forgot-password</p>
+                                <p>Token sẽ được log ra console (kiểm tra Laravel log)</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Email:</label>
+                                <input type="email" id="forgot_email" value="user@example.com">
+                            </div>
+                            <button class="btn btn-primary" onclick="testForgotPassword()">Gửi yêu cầu</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'reset-password':
+                    html = `
+                        <div class="test-section">
+                            <h2>🔄 Đặt lại mật khẩu</h2>
+                            <div class="info-box">
+                                <p><strong>Endpoint:</strong> POST /api/auth/reset-password</p>
+                                <p>Lấy token từ response của forgot-password (debug_token)</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Email:</label>
+                                <input type="email" id="reset_email" value="user@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Token:</label>
+                                <input type="text" id="reset_token" placeholder="Paste token từ forgot-password">
+                            </div>
+                            <div class="form-group">
+                                <label>Mật khẩu mới:</label>
+                                <input type="password" id="reset_password" value="newpassword123">
+                            </div>
+                            <div class="form-group">
+                                <label>Xác nhận mật khẩu:</label>
+                                <input type="password" id="reset_password_confirmation" value="newpassword123">
+                            </div>
+                            <button class="btn btn-primary" onclick="testResetPassword()">Đặt lại mật khẩu</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'movies':
+                    html = `
+                        <div class="test-section">
+                            <h2>🎬 Danh sách phim</h2>
+                            <div class="info-box">
+                                <p><strong>Endpoint:</strong> GET /api/movies</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Status (optional):</label>
+                                <select id="movies_status">
+                                    <option value="">Tất cả</option>
+                                    <option value="now_showing">Đang chiếu</option>
+                                    <option value="coming_soon">Sắp chiếu</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="testMovies()">Lấy danh sách</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'reviews-list':
+                    html = `
+                        <div class="test-section">
+                            <h2>⭐ Danh sách đánh giá</h2>
+                            <div class="info-box">
+                                <p><strong>Endpoint:</strong> GET /api/movies/{id}/reviews</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Movie ID:</label>
+                                <input type="number" id="review_movie_id" value="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Sắp xếp theo:</label>
+                                <select id="review_sort">
+                                    <option value="created_at">Thời gian</option>
+                                    <option value="rating">Đánh giá</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="testReviewsList()">Lấy danh sách</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'reviews-create':
+                    html = `
+                        <div class="test-section">
+                            <h2>✍️ Tạo đánh giá mới</h2>
+                            <div class="info-box">
+                                <p><strong>Endpoint:</strong> POST /api/movies/{id}/reviews</p>
+                                <p>🔒 Yêu cầu authentication</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Movie ID:</label>
+                                <input type="number" id="create_review_movie_id" value="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Rating (1-5):</label>
+                                <input type="number" id="create_review_rating" min="1" max="5" value="5">
+                            </div>
+                            <div class="form-group">
+                                <label>Comment:</label>
+                                <textarea id="create_review_comment">Phim rất hay và cảm động!</textarea>
+                            </div>
+                            <button class="btn btn-primary" onclick="testCreateReview()">Gửi đánh giá</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'notifications':
+                    html = `
+                        <div class="test-section">
+                            <h2>🔔 Danh sách thông báo</h2>
+                            <div class="info-box">
+                                <p><strong>Endpoint:</strong> GET /api/notifications</p>
+                                <p>🔒 Yêu cầu authentication</p>
+                            </div>
+                            <button class="btn btn-primary" onclick="testNotifications()">Lấy thông báo</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'promotions':
+                    html = `
+                        <div class="test-section">
+                            <h2>🎁 Danh sách khuyến mãi</h2>
+                            <div class="info-box">
+                                <p><strong>Endpoint:</strong> GET /api/promotions</p>
+                            </div>
+                            <button class="btn btn-primary" onclick="testPromotions()">Lấy danh sách</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'promotions-validate':
+                    html = `
+                        <div class="test-section">
+                            <h2>✅ Kiểm tra mã khuyến mãi</h2>
+                            <div class="info-box">
+                                <p><strong>Endpoint:</strong> POST /api/promotions/validate</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Mã khuyến mãi:</label>
+                                <input type="text" id="promo_code" value="SUMMER2026">
+                            </div>
+                            <div class="form-group">
+                                <label>Số tiền đơn hàng:</label>
+                                <input type="number" id="promo_amount" value="200000">
+                            </div>
+                            <button class="btn btn-primary" onclick="testValidatePromotion()">Kiểm tra</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'profile':
+                    html = `
+                        <div class="test-section">
+                            <h2>👤 Thông tin cá nhân</h2>
+                            <div class="info-box">
+                                <p><strong>Endpoint:</strong> GET /api/user/profile</p>
+                                <p>🔒 Yêu cầu authentication</p>
+                            </div>
+                            <button class="btn btn-primary" onclick="testProfile()">Lấy thông tin</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'admin-movies':
+                    html = `
+                        <div class="test-section">
+                            <h2>👨‍💼 Admin - Danh sách phim</h2>
+                            <div class="info-box">
+                                <p><strong>Endpoint:</strong> GET /api/admin/movies</p>
+                                <p>🔒 Yêu cầu admin token</p>
+                            </div>
+                            <button class="btn btn-primary" onclick="testAdminMovies()">Lấy danh sách</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'admin-movies-create':
+                    html = `
+                        <div class="test-section">
+                            <h2>➕ Admin - Tạo phim mới</h2>
+                            <div class="info-box">
+                                <p><strong>Endpoint:</strong> POST /api/admin/movies</p>
+                                <p>🔒 Yêu cầu admin token</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Tên phim:</label>
+                                <input type="text" id="admin_movie_title" value="Avengers: Endgame">
+                            </div>
+                            <div class="form-group">
+                                <label>Mô tả:</label>
+                                <textarea id="admin_movie_description">Cuộc chiến cuối cùng của các siêu anh hùng...</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Thời lượng (phút):</label>
+                                <input type="number" id="admin_movie_duration" value="181">
+                            </div>
+                            <div class="form-group">
+                                <label>Ngày phát hành:</label>
+                                <input type="date" id="admin_movie_release" value="2026-04-26">
+                            </div>
+                            <div class="form-group">
+                                <label>Status:</label>
+                                <select id="admin_movie_status">
+                                    <option value="now_showing">Đang chiếu</option>
+                                    <option value="coming_soon">Sắp chiếu</option>
+                                    <option value="ended">Đã kết thúc</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="testAdminCreateMovie()">Tạo phim</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'admin-reviews':
+                    html = `
+                        <div class="test-section">
+                            <h2>👨‍💼 Admin - Danh sách đánh giá</h2>
+                            <div class="info-box">
+                                <p><strong>Endpoint:</strong> GET /api/admin/reviews</p>
+                                <p>🔒 Yêu cầu admin token</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Trạng thái:</label>
+                                <select id="admin_review_status">
+                                    <option value="">Tất cả</option>
+                                    <option value="0">Chưa duyệt</option>
+                                    <option value="1">Đã duyệt</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="testAdminReviews()">Lấy danh sách</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'admin-reviews-approve':
+                    html = `
+                        <div class="test-section">
+                            <h2>✅ Admin - Phê duyệt đánh giá</h2>
+                            <div class="info-box">
+                                <p><strong>Endpoint:</strong> PUT /api/admin/reviews/{id}/approve</p>
+                                <p>🔒 Yêu cầu admin token</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Review ID:</label>
+                                <input type="number" id="admin_approve_review_id" value="1">
+                            </div>
+                            <button class="btn btn-primary" onclick="testAdminApproveReview()">Phê duyệt</button>
+                        </div>
+                    `;
+                    break;
+
+                default:
+                    html = `
+                        <div class="info-box">
+                            <h4>API: ${apiName}</h4>
+                            <p>Tính năng đang được phát triển...</p>
+                        </div>
+                    `;
+            }
+
+            content.innerHTML = html;
+        }
+
+        // Test functions
+        function testRegister() {
+            const data = {
+                name: document.getElementById('reg_name').value,
+                email: document.getElementById('reg_email').value,
+                password: document.getElementById('reg_password').value,
+                password_confirmation: document.getElementById('reg_password_confirmation').value,
+                phone: document.getElementById('reg_phone').value
+            };
+            callAPI('POST', '/auth/register', data);
+        }
+
+        function testLogin() {
+            const data = {
+                email: document.getElementById('login_email').value,
+                password: document.getElementById('login_password').value
+            };
+            callAPI('POST', '/auth/login', data);
+        }
+
+        function testForgotPassword() {
+            const data = {
+                email: document.getElementById('forgot_email').value
+            };
+            callAPI('POST', '/auth/forgot-password', data);
+        }
+
+        function testResetPassword() {
+            const data = {
+                email: document.getElementById('reset_email').value,
+                token: document.getElementById('reset_token').value,
+                password: document.getElementById('reset_password').value,
+                password_confirmation: document.getElementById('reset_password_confirmation').value
+            };
+            callAPI('POST', '/auth/reset-password', data);
+        }
+
+        function testMovies() {
+            const status = document.getElementById('movies_status').value;
+            const endpoint = status ? `/movies?status=${status}` : '/movies';
+            callAPI('GET', endpoint);
+        }
+
+        function testReviewsList() {
+            const movieId = document.getElementById('review_movie_id').value;
+            const sortBy = document.getElementById('review_sort').value;
+            callAPI('GET', `/movies/${movieId}/reviews?sort_by=${sortBy}`);
+        }
+
+        function testCreateReview() {
+            const movieId = document.getElementById('create_review_movie_id').value;
+            const data = {
+                rating: parseInt(document.getElementById('create_review_rating').value),
+                comment: document.getElementById('create_review_comment').value
+            };
+            callAPI('POST', `/movies/${movieId}/reviews`, data, true);
+        }
+
+        function testNotifications() {
+            callAPI('GET', '/notifications', null, true);
+        }
+
+        function testPromotions() {
+            callAPI('GET', '/promotions');
+        }
+
+        function testValidatePromotion() {
+            const data = {
+                code: document.getElementById('promo_code').value,
+                amount: parseFloat(document.getElementById('promo_amount').value)
+            };
+            callAPI('POST', '/promotions/validate', data);
+        }
+
+        function testProfile() {
+            callAPI('GET', '/user/profile', null, true);
+        }
+
+        function testAdminMovies() {
+            callAPI('GET', '/admin/movies', null, true);
+        }
+
+        function testAdminCreateMovie() {
+            const data = {
+                title: document.getElementById('admin_movie_title').value,
+                description: document.getElementById('admin_movie_description').value,
+                duration: parseInt(document.getElementById('admin_movie_duration').value),
+                release_date: document.getElementById('admin_movie_release').value,
+                status: document.getElementById('admin_movie_status').value
+            };
+            callAPI('POST', '/admin/movies', data, true);
+        }
+
+        function testAdminReviews() {
+            const status = document.getElementById('admin_review_status').value;
+            const endpoint = status !== '' ? `/admin/reviews?is_approved=${status}` : '/admin/reviews';
+            callAPI('GET', endpoint, null, true);
+        }
+
+        function testAdminApproveReview() {
+            const reviewId = document.getElementById('admin_approve_review_id').value;
+            callAPI('PUT', `/admin/reviews/${reviewId}/approve`, {}, true);
+        }
+    </script>
+</body>
+
+</html>
