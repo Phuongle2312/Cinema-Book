@@ -1,0 +1,45 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Screen extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'theater_id',
+        'name',
+        'screen_type',
+        'total_seats',
+        'rows',
+        'seats_per_row',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    public function theater()
+    {
+        return $this->belongsTo(Theater::class);
+    }
+
+    public function seats()
+    {
+        return $this->hasMany(Seat::class);
+    }
+
+    public function showtimes()
+    {
+        return $this->hasMany(Showtime::class);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+}

@@ -1,0 +1,56 @@
+[
+    {
+        "id": 1,
+        "title": "Member Day - Buy 1 Get 1",
+        "description": "Exclusive offer for CineBook members every Monday. Buy one ticket and get the second one for free!",
+        "image": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2070&auto=format&fit=crop",
+        "tag": "Member Only",
+        "date": "Every Monday",
+        "type": "offer"
+    },
+    {
+        "id": 2,
+        "title": "Midnight Premiere: Space Odyssey",
+        "description": "Be the first to witness the grand premiere of the year. Special snacks and souvenirs for midnight guests.",
+        "image": "https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=2070&auto=format&fit=crop",
+        "tag": "Exclusive",
+        "date": "Jan 15, 2026",
+        "type": "event"
+    },
+    {
+        "id": 3,
+        "title": "Family Weekend Combo",
+        "description": "Enjoy a perfect family outing with our Mega Combo: 4 Tickets + Large Popcorn + 4 Drinks at 30% off.",
+        "image": "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=2070&auto=format&fit=crop",
+        "tag": "Discount",
+        "date": "Sat & Sun",
+        "type": "offer"
+    },
+    {
+        "id": 4,
+        "title": "Director's Cut Screening",
+        "description": "Join us for a special screening of 'The Last Horizon' followed by a Q&A session with the director.",
+        "image": "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025&auto=format&fit=crop",
+        "tag": "Special Event",
+        "date": "Feb 02, 2026",
+        "type": "event"
+    },
+    {
+        "id": 5,
+        "title": "Student Special",
+        "description": "Show your student ID and get flat 50% off on weekday matinee shows. Valid for 2D screenings only.",
+        "image": "https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?q=80&w=2071&auto=format&fit=crop",
+        "tag": "Student Offer",
+        "date": "Mon - Thu",
+        "type": "offer"
+    },
+    {
+        "id": 6,
+        "title": "Cosplay Night",
+        "description": "Dress up as your favorite superhero and win exclusive merchandise! Best costume gets a year of free movies.",
+        "image": "https://images.unsplash.com/photo-1620510625142-b45cbb784397?q=80&w=2070&auto=format&fit=crop",
+        "tag": "Fan Event",
+        "date": "Mar 10, 2026",
+        "type": "event"
+    }
+]
