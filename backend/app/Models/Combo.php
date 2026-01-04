@@ -17,17 +17,23 @@ class Combo extends Model
     protected $fillable = [
         'name',
         'description',
-        'items',
         'price',
         'image_url',
         'is_available',
     ];
     
     protected $casts = [
-        'items' => 'array', // Tự động convert JSON <-> Array
         'price' => 'decimal:0',
         'is_available' => 'boolean',
     ];
+    
+    /**
+     * Relationship: Combo có nhiều items
+     */
+    public function items()
+    {
+        return $this->hasMany(ComboItem::class, 'combo_id', 'combo_id');
+    }
     
     /**
      * Relationship: Combo được đặt trong nhiều bookings (qua booking_combos)

@@ -76,18 +76,18 @@ class Booking extends Model
         return $this->belongsTo(Showtime::class);
     }
 
-    // Booking có nhiều ghế (through booking_seats)
+    // Booking có nhiều ghế (through booking_details)
     public function seats()
     {
-        return $this->belongsToMany(Seat::class, 'booking_seats')
-            ->withPivot('price')
+        return $this->belongsToMany(Seat::class, 'booking_details', 'booking_id', 'seat_id')
+            ->withPivot('price', 'status')
             ->withTimestamps();
     }
 
-    // Booking có nhiều booking seats (chi tiết)
-    public function bookingSeats()
+    // Booking có nhiều booking details (chi tiết)
+    public function bookingDetails()
     {
-        return $this->hasMany(BookingSeat::class);
+        return $this->hasMany(BookingDetail::class, 'booking_id', 'booking_id');
     }
 
     // Booking có một transaction

@@ -23,7 +23,6 @@ class Movie extends Model
         'synopsis',
         'duration',
         'release_date',
-        'rating',
         'age_rating',
         'poster_url',
         'banner_url',
@@ -34,7 +33,6 @@ class Movie extends Model
 
     protected $casts = [
         'release_date' => 'date',
-        'rating' => 'decimal:1',
         'is_featured' => 'boolean',
     ];
 

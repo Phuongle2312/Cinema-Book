@@ -51,8 +51,8 @@ class Seat extends Model
 
     public function bookings()
     {
-        return $this->belongsToMany(Booking::class, 'booking_seats')
-            ->withPivot('price')
+        return $this->belongsToMany(Booking::class, 'booking_details', 'seat_id', 'booking_id')
+            ->withPivot('price', 'status')
             ->withTimestamps();
     }
 
@@ -82,10 +82,10 @@ class Seat extends Model
     // Kiểm tra ghế có bị đặt trong showtime này không
     public function isBookedForShowtime($showtimeId): bool
     {
-        return BookingSeat::whereHas('booking', function ($query) use ($showtimeId) {
+        return BookingDetail::whereHas('booking', function ($query) use ($showtimeId) {
             $query->where('showtime_id', $showtimeId)
                   ->whereIn('status', ['pending', 'confirmed']);
-        })->where('seat_id', $this->id)->exists();
+        })->where('seat_id', $this->seat_id)->exists();
     }
 
     // Kiểm tra ghế có bị lock trong showtime này không
