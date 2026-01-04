@@ -77,6 +77,7 @@ Route::prefix('theaters')->group(function () {
 // SHOWTIMES ROUTES (Public)
 // ============================================
 Route::prefix('showtimes')->group(function () {
+    Route::get('/', [ShowtimeController::class, 'index']);               // GET /api/showtimes
     Route::get('/{id}/seats', [ShowtimeController::class, 'getSeats']); // GET /api/showtimes/{id}/seats
 });
 
@@ -90,7 +91,7 @@ Route::post('/promotions/validate', [PromotionController::class, 'validate']);
 // PROTECTED ROUTES (Cần authentication)
 // ============================================
 Route::middleware('auth:sanctum')->group(function () {
-    
+
     // ============================================
     // USER ROUTES
     // ============================================
@@ -99,16 +100,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/profile', [AuthController::class, 'updateUser']);   // PUT /api/user/profile
         Route::get('/bookings', [BookingController::class, 'userBookings']); // GET /api/user/bookings
     });
-    
+
     // ============================================
     // BOOKING ROUTES
     // ============================================
     Route::prefix('bookings')->group(function () {
+        Route::get('/{id}', [BookingController::class, 'show']);                  // GET /api/bookings/{id}
         Route::post('/', [BookingController::class, 'store']);                    // POST /api/bookings
         Route::post('/{id}/pay', [BookingController::class, 'pay']);              // POST /api/bookings/{id}/pay
         Route::get('/e-ticket/{id}', [BookingController::class, 'eTicket']);      // GET /api/bookings/e-ticket/{id}
     });
-    
+
     // ============================================
     // REVIEWS ROUTES
     // ============================================

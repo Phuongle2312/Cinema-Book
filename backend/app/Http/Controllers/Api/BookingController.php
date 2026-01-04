@@ -100,6 +100,22 @@ class BookingController extends Controller
     }
 
     /**
+     * GET /api/bookings/{id}
+     * Lấy chi tiết booking (màn hình thanh toán)
+     */
+    public function show($id, Request $request)
+    {
+        $booking = Booking::with(['seats', 'combos', 'showtime.movie', 'showtime.room.theater'])
+            ->where('user_id', $request->user()->id)
+            ->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $booking
+        ]);
+    }
+
+    /**
      * POST /api/bookings/{id}/pay
      * Xử lý thanh toán (dummy payment)
      */
@@ -310,7 +326,7 @@ class BookingController extends Controller
         // Kiểm tra ghế đã được đặt
         $bookedSeats = BookingSeat::whereHas('booking', function ($query) use ($showtimeId) {
             $query->where('showtime_id', $showtimeId)
-                  ->whereIn('status', ['confirmed', 'pending']);
+                ->whereIn('status', ['confirmed', 'pending']);
         })->whereIn('seat_id', $seatIds)->count();
 
         if ($bookedSeats > 0) {
@@ -338,7 +354,7 @@ class BookingController extends Controller
 
         foreach ($seats as $seat) {
             $price = $showtime->base_price + $seat->extra_price;
-            
+
             BookingSeat::create([
                 'booking_id' => $booking->booking_id,
                 'seat_id' => $seat->seat_id,

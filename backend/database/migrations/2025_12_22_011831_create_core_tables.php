@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      * Migration tổng hợp cho hệ thống Cinema Booking
@@ -16,7 +15,7 @@ return new class extends Migration
         // ============================================
         // NHÓM 1: METADATA TABLES (Thể loại, Ngôn ngữ, Diễn viên)
         // ============================================
-        
+
         // 1. Bảng Thể loại phim (Genres)
         Schema::create('genres', function (Blueprint $table) {
             $table->id('genre_id');
@@ -46,7 +45,7 @@ return new class extends Migration
         // ============================================
         // NHÓM 3: CORE TABLES (Rạp, Phòng chiếu, Phim)
         // ============================================
-        
+
         // 4. Bảng Rạp chiếu (Theaters)
         Schema::create('theaters', function (Blueprint $table) {
             $table->id('theater_id');
@@ -87,14 +86,14 @@ return new class extends Migration
         // ============================================
         // NHÓM 4: PIVOT TABLES (Many-to-Many)
         // ============================================
-        
+
         // 7. Bảng Phim-Thể loại (Movie-Genre)
         Schema::create('movie_genre', function (Blueprint $table) {
             $table->id();
             $table->foreignId('movie_id')->constrained('movies', 'movie_id')->onDelete('cascade');
             $table->foreignId('genre_id')->constrained('genres', 'genre_id')->onDelete('cascade');
             $table->timestamps();
-            
+
             // Đảm bảo không trùng lặp
             $table->unique(['movie_id', 'genre_id']);
         });
@@ -106,7 +105,7 @@ return new class extends Migration
             $table->foreignId('language_id')->constrained('languages', 'language_id')->onDelete('cascade');
             $table->enum('type', ['original', 'subtitle', 'dubbed'])->default('subtitle');
             $table->timestamps();
-            
+
             $table->unique(['movie_id', 'language_id', 'type']);
         });
 
@@ -123,21 +122,21 @@ return new class extends Migration
         // ============================================
         // NHÓM 5: BOOKING SYSTEM (Lịch chiếu, Ghế)
         // ============================================
-        
+
         // 10. Bảng Lịch chiếu (Showtimes)
         Schema::create('showtimes', function (Blueprint $table) {
             $table->id('showtime_id');
             $table->foreignId('movie_id')->constrained('movies', 'movie_id')->onDelete('cascade');
             $table->foreignId('screen_id')->constrained('screens', 'screen_id')->onDelete('cascade');
-            $table->dateTime('start_time');
-            $table->dateTime('end_time'); // Tự động tính = start_time + duration
-            
+            $table->dateTime('start_time')->nullable();
+            $table->dateTime('end_time')->nullable(); // Tự động tính = start_time + duration
+
             // Giá gốc do Admin set (80k ngày thường, 100k cuối tuần)
             $table->decimal('base_price', 10, 0);
-            
+
             $table->enum('status', ['scheduled', 'ongoing', 'completed', 'cancelled'])->default('scheduled');
             $table->timestamps();
-            
+
             // Không cho trùng lịch chiếu cùng phòng cùng giờ
             $table->unique(['screen_id', 'start_time']);
         });
@@ -149,12 +148,12 @@ return new class extends Migration
             $table->string('row'); // Vd: A, B, C
             $table->integer('number'); // Vd: 1, 2, 3
             $table->enum('type', ['standard', 'vip', 'couple'])->default('standard');
-            
+
             // Giá phụ thu theo loại ghế (VIP +20k, Couple +30k)
             $table->decimal('extra_price', 10, 0)->default(0);
-            
+
             $table->timestamps();
-            
+
             // Mỗi phòng không có ghế trùng
             $table->unique(['screen_id', 'row', 'number']);
         });
@@ -162,20 +161,20 @@ return new class extends Migration
         // ============================================
         // NHÓM 6: TRANSACTION TABLES (Đặt vé, Thanh toán)
         // ============================================
-        
+
         // 12. Bảng Đặt vé (Bookings)
         Schema::create('bookings', function (Blueprint $table) {
             $table->id('booking_id');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('showtime_id')->constrained('showtimes', 'showtime_id')->onDelete('cascade');
-            
+
             $table->string('booking_code', 20)->unique(); // Mã đặt vé: BK20251222001
             $table->integer('total_seats'); // Số ghế đã đặt
             $table->decimal('total_price', 10, 0); // Tổng tiền
-            
+
             $table->enum('status', ['pending', 'confirmed', 'cancelled', 'expired'])->default('pending');
-            $table->timestamp('expires_at')->nullable(); // Hết hạn sau 5-6 phút nếu chưa thanh toán
-            
+            $table->dateTime('expires_at')->nullable(); // Hết hạn sau 5-6 phút nếu chưa thanh toán
+
             $table->timestamps();
         });
 
@@ -185,11 +184,11 @@ return new class extends Migration
             $table->foreignId('booking_id')->constrained('bookings', 'booking_id')->onDelete('cascade');
             $table->foreignId('seat_id')->constrained('seats', 'seat_id')->onDelete('cascade');
             $table->foreignId('showtime_id')->constrained('showtimes', 'showtime_id')->onDelete('cascade');
-            
+
             $table->decimal('price', 10, 0); // Giá ghế này = base_price + extra_price
-            
+
             $table->timestamps();
-            
+
             // Một ghế chỉ được đặt 1 lần cho 1 suất chiếu
             $table->unique(['showtime_id', 'seat_id']);
         });
@@ -200,12 +199,12 @@ return new class extends Migration
             $table->foreignId('seat_id')->constrained('seats', 'seat_id')->onDelete('cascade');
             $table->foreignId('showtime_id')->constrained('showtimes', 'showtime_id')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            
-            $table->timestamp('locked_at'); // Thời gian khóa
-            $table->timestamp('expires_at'); // Hết hạn sau 5-6 phút
-            
+
+            $table->dateTime('locked_at')->nullable(); // Thời gian khóa
+            $table->dateTime('expires_at')->nullable(); // Hết hạn sau 5-6 phút
+
             $table->timestamps();
-            
+
             // Một ghế chỉ bị khóa 1 lần cho 1 suất chiếu
             $table->unique(['showtime_id', 'seat_id']);
         });
@@ -215,15 +214,15 @@ return new class extends Migration
             $table->id('transaction_id');
             $table->foreignId('booking_id')->constrained('bookings', 'booking_id')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            
+
             $table->string('transaction_code', 30)->unique(); // Mã giao dịch
             $table->decimal('amount', 10, 0); // Số tiền
             $table->enum('payment_method', ['cash', 'credit_card', 'momo', 'zalopay', 'vnpay'])->default('cash');
             $table->enum('status', ['pending', 'success', 'failed', 'refunded'])->default('pending');
-            
+
             $table->text('payment_details')->nullable(); // JSON: thông tin từ cổng thanh toán
-            $table->timestamp('paid_at')->nullable();
-            
+            $table->dateTime('paid_at')->nullable();
+
             $table->timestamps();
         });
 
@@ -232,12 +231,12 @@ return new class extends Migration
             $table->id('review_id');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('movie_id')->constrained('movies', 'movie_id')->onDelete('cascade');
-            
+
             $table->integer('rating'); // 1-10 hoặc 1-5
             $table->text('comment')->nullable();
-            
+
             $table->timestamps();
-            
+
             // Mỗi user chỉ đánh giá 1 lần cho 1 phim
             $table->unique(['user_id', 'movie_id']);
         });

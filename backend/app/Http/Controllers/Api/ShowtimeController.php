@@ -17,6 +17,43 @@ use Carbon\Carbon;
 class ShowtimeController extends Controller
 {
     /**
+     * GET /api/showtimes
+     * Lấy danh sách suất chiếu theo phim, rạp hoặc ngày
+     */
+    public function index(Request $request)
+    {
+        $query = Showtime::with(['movie', 'room.theater']);
+
+        // Lọc theo phim
+        if ($request->has('movie_id')) {
+            $query->where('movie_id', $request->movie_id);
+        }
+
+        // Lọc theo rạp
+        if ($request->has('theater_id')) {
+            $query->whereHas('room', function ($q) use ($request) {
+                $q->where('theater_id', $request->theater_id);
+            });
+        }
+
+        // Lọc theo ngày
+        if ($request->has('date')) {
+            $date = $request->date; // Y-m-d
+            $query->whereDate('start_time', $date);
+        } else {
+            // Mặc định lấy từ thời điểm hiện tại trở đi
+            $query->where('start_time', '>=', Carbon::now());
+        }
+
+        $showtimes = $query->orderBy('start_time')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $showtimes
+        ]);
+    }
+
+    /**
      * GET /api/showtimes/{id}/seats
      * Lấy sơ đồ ghế ngồi kèm trạng thái (available/booked/locked)
      */
@@ -41,7 +78,7 @@ class ShowtimeController extends Controller
         // Lấy danh sách ghế đã đặt (confirmed hoặc pending)
         $bookedSeatIds = BookingSeat::whereHas('booking', function ($query) use ($id) {
             $query->where('showtime_id', $id)
-                  ->whereIn('status', ['confirmed', 'pending']);
+                ->whereIn('status', ['confirmed', 'pending']);
         })->pluck('seat_id')->toArray();
 
         // Lấy danh sách ghế đang bị lock (chưa hết hạn)

@@ -59,13 +59,13 @@ class Movie extends Model
     // Một phim thuộc nhiều thể loại (many-to-many)
     public function genres()
     {
-        return $this->belongsToMany(Genre::class, 'movie_genre');
+        return $this->belongsToMany(Genre::class, 'movie_genre', 'movie_id', 'genre_id');
     }
 
     // Một phim có nhiều ngôn ngữ (many-to-many)
     public function languages()
     {
-        return $this->belongsToMany(Language::class, 'movie_language')
+        return $this->belongsToMany(Language::class, 'movie_language', 'movie_id', 'language_id')
             ->withPivot('type'); // subtitle hoặc dubbing
     }
 
@@ -134,9 +134,9 @@ class Movie extends Model
     {
         return $query->where(function ($q) use ($searchTerm) {
             $q->where('title', 'like', "%{$searchTerm}%")
-              ->orWhereHas('cast', function ($castQuery) use ($searchTerm) {
-                  $castQuery->where('name', 'like', "%{$searchTerm}%");
-              });
+                ->orWhereHas('cast', function ($castQuery) use ($searchTerm) {
+                    $castQuery->where('name', 'like', "%{$searchTerm}%");
+                });
         });
     }
 

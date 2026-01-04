@@ -24,12 +24,12 @@ class MovieController extends Controller
         $query = Movie::with(['genres', 'languages']);
 
         // Lọc theo trạng thái (now_showing, coming_soon, ended)
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
         // Lọc theo thành phố (qua theaters)
-        if ($request->has('city')) {
+        if ($request->filled('city')) {
             $query->whereHas('showtimes.room.theater', function ($q) use ($request) {
                 $q->where('city', $request->city);
             });
@@ -63,7 +63,7 @@ class MovieController extends Controller
     public function featured()
     {
         $movies = Movie::with(['genres', 'languages'])
-            ->where('status', 'now_showing')
+            ->whereIn('status', ['now_showing', 'coming_soon'])
             ->where('rating', '>=', 7.0)
             ->orderBy('rating', 'desc')
             ->limit(10)
@@ -84,19 +84,16 @@ class MovieController extends Controller
         $movie = Movie::with([
             'genres',
             'languages',
-            'cast' => function ($query) {
-                $query->withPivot('role', 'character_name');
-            },
+            'cast',
             'showtimes' => function ($query) {
                 $query->where('start_time', '>=', now())
-                      ->with('room.theater')
-                      ->orderBy('start_time');
+                    ->with('room.theater')
+                    ->orderBy('start_time');
             },
             'reviews' => function ($query) {
-                $query->where('is_verified_purchase', true)
-                      ->with('user:id,name')
-                      ->latest()
-                      ->limit(10);
+                $query->with('user:id,name')
+                    ->latest()
+                    ->limit(10);
             }
         ])->find($id);
 
@@ -133,10 +130,10 @@ class MovieController extends Controller
         $movies = Movie::with(['genres', 'languages'])
             ->where(function ($q) use ($query) {
                 $q->where('title', 'LIKE', "%{$query}%")
-                  ->orWhere('description', 'LIKE', "%{$query}%")
-                  ->orWhereHas('cast', function ($castQuery) use ($query) {
-                      $castQuery->where('name', 'LIKE', "%{$query}%");
-                  });
+                    ->orWhere('description', 'LIKE', "%{$query}%")
+                    ->orWhereHas('cast', function ($castQuery) use ($query) {
+                        $castQuery->where('name', 'LIKE', "%{$query}%");
+                    });
             })
             ->orderBy('rating', 'desc')
             ->paginate(12);
@@ -171,40 +168,45 @@ class MovieController extends Controller
         $query = Movie::with(['genres', 'languages']);
 
         // Lọc theo thành phố
-        if ($request->has('city')) {
+        if ($request->filled('city')) {
             $query->whereHas('showtimes.room.theater', function ($q) use ($request) {
                 $q->where('city', $request->city);
             });
         }
 
-        // Lọc theo thể loại
-        if ($request->has('genre_id')) {
+        // Lọc theo thể loại (ID hoặc Name/Slug)
+        if ($request->filled('genre_id')) {
             $query->whereHas('genres', function ($q) use ($request) {
-                $q->where('genre_id', $request->genre_id);
+                $q->where('genres.genre_id', $request->genre_id);
+            });
+        } elseif ($request->filled('genre')) {
+            $query->whereHas('genres', function ($q) use ($request) {
+                $q->where('name', 'like', "%{$request->genre}%")
+                    ->orWhere('slug', 'like', "%{$request->genre}%");
             });
         }
 
         // Lọc theo ngôn ngữ
-        if ($request->has('language_id')) {
+        if ($request->filled('language_id')) {
             $query->whereHas('languages', function ($q) use ($request) {
                 $q->where('language_id', $request->language_id);
             });
         }
 
         // Lọc theo rating tối thiểu
-        if ($request->has('rating')) {
+        if ($request->filled('rating')) {
             $query->where('rating', '>=', $request->rating);
         }
 
         // Lọc theo ngày chiếu
-        if ($request->has('date')) {
+        if ($request->filled('date')) {
             $query->whereHas('showtimes', function ($q) use ($request) {
                 $q->whereDate('start_time', $request->date);
             });
         }
 
         // Lọc theo trạng thái
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
