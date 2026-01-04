@@ -19,6 +19,7 @@
 - [x] Validate transaction -> booking integrity
 
 ## Verification Phase
-- [x] Verify database integrity (check constraints)
+- [x] Verify 3NF compliance
 - [x] Test core flows (Booking, Payment, Seat selection)
+- [x] Audit APIs and create API.md
 - [x] Final project status report

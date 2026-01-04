@@ -43,6 +43,14 @@
 #### [MODIFY] Seat Model
 - Cập nhật quy trình kiểm tra ghế đã được đặt (`isBookedForShowtime`) thông qua bảng `booking_details`.
 
+### 4. Tài Liệu API (Documentation)
+**File:** [API.md](file:///e:/Github/Cinema-Book/API.md)
+
+**Kết quả:**
+- ✅ Liệt kê chi tiết toàn bộ các API hiện có (Auth, Movies, Bookings, Admin, etc.)
+- ✅ Xác định các API còn thiếu (Missing) để lập lộ trình phát triển tiếp theo (Cities, Genres, Dashboard, etc.)
+- ✅ Phân loại rõ ràng giữa Public, User Protected, và Admin Protected routes.
+
 ---
 
 ## 🎯 Kết Quả Cuối Cùng
