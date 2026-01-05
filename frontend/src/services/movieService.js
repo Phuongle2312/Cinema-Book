@@ -49,8 +49,8 @@ const movieService = {
     // Tìm kiếm
     searchMovies: async (query) => {
         try {
-            const response = await api.get('/movies/search', { 
-                params: { q: query } 
+            const response = await api.get('/movies/search', {
+                params: { q: query }
             });
             return response.data;
         } catch (error) {
@@ -66,8 +66,8 @@ const movieService = {
     // Bộ lọc
     filterMovies: async (filters) => {
         try {
-            const response = await api.get('/movies/filter', { 
-                params: filters 
+            const response = await api.get('/movies/filter', {
+                params: filters
             });
             return response.data;
         } catch (error) {
