@@ -1,17 +1,34 @@
-import { MOCK_SHOWTIMES, generateMockSeats } from './mockData';
+import api from './api';
 
 const showtimeService = {
-    // Lấy danh sách suất chiếu
-    getShowtimes: async (params) => {
-        const movieId = parseInt(params.movie_id);
-        const filtered = MOCK_SHOWTIMES.filter(s => s.movie_id === movieId);
-        return { success: true, data: filtered };
+    // Lấy danh sách lịch chiếu
+    getShowtimes: async (params = {}) => {
+        try {
+            const response = await api.get('/showtimes', { params });
+            return response.data;
+        } catch (error) {
+            console.error('Get showtimes error:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể lấy lịch chiếu',
+                data: []
+            };
+        }
     },
 
-    // Lấy chi tiết suất chiếu và sơ đồ ghế
-    getShowtimeSeats: async (id) => {
-        const mockSeats = generateMockSeats();
-        return { success: true, data: mockSeats };
+    // Lấy danh sách ghế cho showtime
+    getSeats: async (showtimeId) => {
+        try {
+            const response = await api.get(`/showtimes/${showtimeId}/seats`);
+            return response.data;
+        } catch (error) {
+            console.error('Get seats error:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể lấy thông tin ghế',
+                data: []
+            };
+        }
     }
 };
 
