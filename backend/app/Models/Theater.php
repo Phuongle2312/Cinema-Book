@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Theater extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'theater_id';
 
     protected $fillable = [
         'name',

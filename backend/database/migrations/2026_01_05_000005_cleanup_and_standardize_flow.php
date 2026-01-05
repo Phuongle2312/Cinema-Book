@@ -25,25 +25,30 @@ return new class extends Migration
 
         // 4. Strengthen booking_details
         if (Schema::hasTable('booking_details')) {
-            Schema::table('booking_details', function (Blueprint $table) {
-                // Ensure foreign keys have CASCADE DELETE for "Standard Flow"
-                // Laravel convention for foreign key name: booking_details_booking_id_foreign
-                
-                // 1. Booking relationship
+            // Drop potential existing foreign keys (using legacy and current names)
+            foreach (['booking_details_booking_id_foreign', 'tickets_booking_id_foreign'] as $fk) {
                 try {
-                    $table->dropForeign('booking_details_booking_id_foreign');
+                    Schema::table('booking_details', function (Blueprint $table) use ($fk) {
+                        $table->dropForeign($fk);
+                    });
                 } catch (\Exception $e) {}
-                
+            }
+
+            foreach (['booking_details_seat_id_foreign', 'tickets_seat_id_foreign'] as $fk) {
+                try {
+                    Schema::table('booking_details', function (Blueprint $table) use ($fk) {
+                        $table->dropForeign($fk);
+                    });
+                } catch (\Exception $e) {}
+            }
+
+            // Create new standardized foreign keys
+            Schema::table('booking_details', function (Blueprint $table) {
                 $table->foreign('booking_id')
                     ->references('booking_id')
                     ->on('bookings')
                     ->onDelete('cascade');
 
-                // 2. Seat relationship
-                try {
-                    $table->dropForeign('booking_details_seat_id_foreign');
-                } catch (\Exception $e) {}
-                
                 $table->foreign('seat_id')
                     ->references('seat_id')
                     ->on('seats')
@@ -53,11 +58,13 @@ return new class extends Migration
 
         // 5. Ensure transactions have CASCADE DELETE from bookings
         if (Schema::hasTable('transactions')) {
-            Schema::table('transactions', function (Blueprint $table) {
-                try {
+            try {
+                Schema::table('transactions', function (Blueprint $table) {
                     $table->dropForeign('transactions_booking_id_foreign');
-                } catch (\Exception $e) {}
-                
+                });
+            } catch (\Exception $e) {}
+
+            Schema::table('transactions', function (Blueprint $table) {
                 $table->foreign('booking_id')
                     ->references('booking_id')
                     ->on('bookings')

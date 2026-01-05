@@ -13,6 +13,7 @@ use Carbon\Carbon;
 class Booking extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'booking_id';
 
     protected $fillable = [
         'user_id',
@@ -189,7 +190,7 @@ class Booking extends Model
 
         // Xóa seat locks
         SeatLock::where('user_id', $this->user_id)
-            ->whereIn('seat_id', $this->seats->pluck('id'))
+            ->whereIn('seat_id', $this->seats->pluck('seat_id'))
             ->where('showtime_id', $this->showtime_id)
             ->delete();
 
@@ -203,7 +204,7 @@ class Booking extends Model
 
         // Release seats (xóa seat locks)
         SeatLock::where('user_id', $this->user_id)
-            ->whereIn('seat_id', $this->seats->pluck('id'))
+            ->whereIn('seat_id', $this->seats->pluck('seat_id'))
             ->where('showtime_id', $this->showtime_id)
             ->delete();
 
@@ -220,7 +221,7 @@ class Booking extends Model
 
         // Release seats
         SeatLock::where('user_id', $this->user_id)
-            ->whereIn('seat_id', $this->seats->pluck('id'))
+            ->whereIn('seat_id', $this->seats->pluck('seat_id'))
             ->where('showtime_id', $this->showtime_id)
             ->delete();
 
@@ -239,7 +240,7 @@ class Booking extends Model
     // Lấy thông tin rạp từ showtime
     public function getTheaterAttribute()
     {
-        return $this->showtime->screen->theater;
+        return $this->showtime->room->theater;
     }
 
     // Lấy thời gian còn lại để thanh toán (phút)

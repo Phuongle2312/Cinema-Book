@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 class Seat extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'seat_id';
 
     protected $fillable = [
         'room_id',
@@ -46,7 +47,7 @@ class Seat extends Model
 
     public function room()
     {
-        return $this->belongsTo(Room::class);
+        return $this->belongsTo(Room::class, 'room_id', 'room_id');
     }
 
     public function bookings()
@@ -58,7 +59,7 @@ class Seat extends Model
 
     public function seatLocks()
     {
-        return $this->hasMany(SeatLock::class);
+        return $this->hasMany(SeatLock::class, 'seat_id', 'seat_id');
     }
 
     /**
@@ -91,7 +92,7 @@ class Seat extends Model
     // Kiểm tra ghế có bị lock trong showtime này không
     public function isLockedForShowtime($showtimeId): bool
     {
-        return SeatLock::where('seat_id', $this->id)
+        return SeatLock::where('seat_id', $this->seat_id)
             ->where('showtime_id', $showtimeId)
             ->where('expires_at', '>', now())
             ->exists();

@@ -37,6 +37,10 @@ Route::get('/test', function () {
 
 // Shorthand routes (dễ nhớ hơn)
 Route::post('/login', [AuthController::class, 'login']);
+// Named route for Sanctum auth redirection
+Route::get('/login', function () {
+    return response()->json(['message' => 'Unauthenticated.'], 401);
+})->name('login');
 Route::post('/register', [AuthController::class, 'register']);
 
 // Full routes với prefix 'auth'
@@ -84,6 +88,15 @@ Route::prefix('showtimes')->group(function () {
 // ============================================
 // PROMOTIONS ROUTES (Public)
 // ============================================
+// ============================================
+// LOGOUT ROUTES (Handled manually for idempotency)
+// ============================================
+// Using match(['get', 'post']) to allow browser testing without MethodNotAllowed error
+Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout']);
+Route::prefix('auth')->group(function () {
+    Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout']);
+});
+
 Route::get('/promotions', [PromotionController::class, 'index']);
 Route::post('/promotions/validate', [PromotionController::class, 'validate']);
 
@@ -105,6 +118,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // BOOKING ROUTES
     // ============================================
     Route::prefix('bookings')->group(function () {
+        Route::get('/', [BookingController::class, 'userBookings']);              // GET /api/bookings (List my bookings)
         Route::get('/{id}', [BookingController::class, 'show']);                  // GET /api/bookings/{id}
         Route::post('/', [BookingController::class, 'store']);                    // POST /api/bookings
         Route::post('/{id}/pay', [BookingController::class, 'pay']);              // POST /api/bookings/{id}/pay
@@ -125,10 +139,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/read-all', [NotificationController::class, 'markAllAsRead']); // POST /api/notifications/read-all
     });
     
-    // ============================================
-    // AUTH ROUTES (Protected)
-    // ============================================
-    Route::post('/logout', [AuthController::class, 'logout']);         // POST /api/logout
+    // Logout removed from here to be handled manually
 });
 
 // ============================================

@@ -10,6 +10,7 @@ class Cast extends Model
     use HasFactory;
 
     protected $table = 'cast';
+    protected $primaryKey = 'cast_id';
 
     protected $fillable = [
         'name',
@@ -26,7 +27,7 @@ class Cast extends Model
 
     public function movies()
     {
-        return $this->belongsToMany(Movie::class, 'movie_cast')
+        return $this->belongsToMany(Movie::class, 'movie_cast', 'cast_id', 'movie_id')
             ->withPivot('role', 'character_name', 'order');
     }
 }

@@ -19,8 +19,8 @@ return new class extends Migration
             $table->decimal('discount_value', 10, 2)->comment('Giá trị giảm giá');
             $table->decimal('min_purchase_amount', 10, 2)->nullable()->comment('Số tiền tối thiểu để áp dụng');
             $table->decimal('max_discount_amount', 10, 2)->nullable()->comment('Số tiền giảm tối đa (cho percentage)');
-            $table->timestamp('valid_from')->comment('Ngày bắt đầu hiệu lực');
-            $table->timestamp('valid_to')->comment('Ngày kết thúc hiệu lực');
+            $table->dateTime('valid_from')->nullable()->comment('Ngày bắt đầu hiệu lực');
+            $table->dateTime('valid_to')->nullable()->comment('Ngày kết thúc hiệu lực');
             $table->integer('max_uses')->nullable()->comment('Số lần sử dụng tối đa');
             $table->integer('current_uses')->default(0)->comment('Số lần đã sử dụng');
             $table->boolean('is_active')->default(true)->comment('Trạng thái kích hoạt');

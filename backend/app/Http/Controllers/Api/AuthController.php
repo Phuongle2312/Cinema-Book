@@ -106,10 +106,18 @@ class AuthController extends Controller
      * Đăng xuất
      * POST /api/logout
      */
+    /**
+     * Đăng xuất
+     * POST /api/logout
+     */
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        // Kiểm tra xem user có đang đăng nhập không (qua Sanctum)
+        if (Auth::guard('sanctum')->check()) {
+            Auth::guard('sanctum')->user()->currentAccessToken()->delete();
+        }
 
+        // Luôn trả về success để đảm bảo client không bị lỗi 401
         return response()->json([
             'success' => true,
             'message' => 'Đăng xuất thành công'

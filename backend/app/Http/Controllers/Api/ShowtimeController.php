@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Showtime;
 use App\Models\Seat;
-use App\Models\BookingSeat;
+use App\Models\BookingDetail;
 use App\Models\SeatLock;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -70,13 +70,12 @@ class ShowtimeController extends Controller
 
         // Lấy tất cả ghế của room
         $seats = Seat::where('room_id', $showtime->room_id)
-            ->with('seatType')
             ->orderBy('row')
             ->orderBy('number')
             ->get();
 
         // Lấy danh sách ghế đã đặt (confirmed hoặc pending)
-        $bookedSeatIds = BookingSeat::whereHas('booking', function ($query) use ($id) {
+        $bookedSeatIds = BookingDetail::whereHas('booking', function ($query) use ($id) {
             $query->where('showtime_id', $id)
                 ->whereIn('status', ['confirmed', 'pending']);
         })->pluck('seat_id')->toArray();

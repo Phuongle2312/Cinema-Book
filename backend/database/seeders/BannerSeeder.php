@@ -34,7 +34,6 @@ class BannerSeeder extends Seeder
                     'release_date' => Carbon::createFromDate($item['year'], 1, 1),
                     'poster_url' => $item['image'],
                     'banner_url' => $item['image'],
-                    'rating' => floatval($item['rating']),
                     'status' => 'now_showing',
                 ]
             );
