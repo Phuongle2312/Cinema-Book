@@ -10,6 +10,23 @@ const PromotionDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [promotion, setPromotion] = useState(null);
+    const [actionState, setActionState] = useState({ loading: false, completed: false });
+
+    const handleAction = () => {
+        setActionState({ loading: true, completed: false });
+
+        // Simulate API call
+        setTimeout(() => {
+            setActionState({ loading: false, completed: true });
+
+            if (promotion.type === 'offer') {
+                const code = `CINEBOOK-${Math.floor(Math.random() * 10000)}`;
+                alert(`Offer Claimed Successfully!\n\nYour Code: ${code}\n\nPresent this code at the ticket counter.`);
+            } else {
+                alert("Registration Successful!\n\nWe have sent a confirmation email to your inbox.");
+            }
+        }, 1500);
+    };
 
     useEffect(() => {
         // Find the promotion by ID
@@ -86,8 +103,14 @@ const PromotionDetails = () => {
                         <div className="action-card">
                             <h3>Interested?</h3>
                             <p>Don't miss out on this limited time {promotion.type}.</p>
-                            <button className="primary-btn">
-                                {promotion.type === 'offer' ? 'Claim Offer' : 'Register Now'}
+                            <button
+                                className={`primary-btn ${actionState.completed ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                onClick={handleAction}
+                                disabled={actionState.loading || actionState.completed}
+                            >
+                                {actionState.loading ? 'Processing...' : (
+                                    actionState.completed ? (promotion.type === 'offer' ? 'Claimed' : 'Registered') : (promotion.type === 'offer' ? 'Claim Offer' : 'Register Now')
+                                )}
                             </button>
                             <button className="secondary-btn">
                                 <Share2 size={18} />
