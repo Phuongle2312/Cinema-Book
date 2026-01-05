@@ -139,9 +139,9 @@ export const generateMockSeats = () => {
                 seat_id: `${row}${i}`,
                 row: row,
                 number: i,
-                status: Math.random() > 0.85 ? 'booked' : 'available',
-                seat_type: { name: row === 'G' ? 'VIP' : (row === 'H' ? 'Couple' : 'Standard') },
-                extra_price: row === 'G' ? 20000 : (row === 'H' ? 50000 : 0)
+                status: 'available', // ALL SEATS AVAILABLE AS REQUESTED
+                seat_type: { name: row === 'A' ? 'VIP' : (row === 'H' ? 'Couple' : 'Standard') },
+                extra_price: row === 'A' ? 20000 : (row === 'H' ? 50000 : 0)
             };
             seatMap[row].push(seat);
             allSeats.push(seat);
