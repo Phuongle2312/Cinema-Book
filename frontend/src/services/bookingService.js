@@ -20,7 +20,7 @@ const bookingService = {
             const row = id.charAt(0);
             const number = parseInt(id.substring(1));
             // Simple logic for price
-            const extraPrice = row === 'G' ? 20000 : 0;
+            const extraPrice = row === 'A' ? 20000 : (row === 'H' ? 50000 : 0);
             return {
                 seat_id: id,
                 row: row,
