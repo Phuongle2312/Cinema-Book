@@ -13,6 +13,7 @@ use Carbon\Carbon;
 class Booking extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'booking_id';
 
     protected $fillable = [
         'user_id',
@@ -76,18 +77,18 @@ class Booking extends Model
         return $this->belongsTo(Showtime::class);
     }
 
-    // Booking có nhiều ghế (through booking_seats)
+    // Booking có nhiều ghế (through booking_details)
     public function seats()
     {
-        return $this->belongsToMany(Seat::class, 'booking_seats')
-            ->withPivot('price')
+        return $this->belongsToMany(Seat::class, 'booking_details', 'booking_id', 'seat_id')
+            ->withPivot('price', 'status')
             ->withTimestamps();
     }
 
-    // Booking có nhiều booking seats (chi tiết)
-    public function bookingSeats()
+    // Booking có nhiều booking details (chi tiết)
+    public function bookingDetails()
     {
-        return $this->hasMany(BookingSeat::class);
+        return $this->hasMany(BookingDetail::class, 'booking_id', 'booking_id');
     }
 
     // Booking có một transaction
@@ -189,7 +190,7 @@ class Booking extends Model
 
         // Xóa seat locks
         SeatLock::where('user_id', $this->user_id)
-            ->whereIn('seat_id', $this->seats->pluck('id'))
+            ->whereIn('seat_id', $this->seats->pluck('seat_id'))
             ->where('showtime_id', $this->showtime_id)
             ->delete();
 
@@ -203,7 +204,7 @@ class Booking extends Model
 
         // Release seats (xóa seat locks)
         SeatLock::where('user_id', $this->user_id)
-            ->whereIn('seat_id', $this->seats->pluck('id'))
+            ->whereIn('seat_id', $this->seats->pluck('seat_id'))
             ->where('showtime_id', $this->showtime_id)
             ->delete();
 
@@ -220,7 +221,7 @@ class Booking extends Model
 
         // Release seats
         SeatLock::where('user_id', $this->user_id)
-            ->whereIn('seat_id', $this->seats->pluck('id'))
+            ->whereIn('seat_id', $this->seats->pluck('seat_id'))
             ->where('showtime_id', $this->showtime_id)
             ->delete();
 
@@ -239,7 +240,7 @@ class Booking extends Model
     // Lấy thông tin rạp từ showtime
     public function getTheaterAttribute()
     {
-        return $this->showtime->screen->theater;
+        return $this->showtime->room->theater;
     }
 
     // Lấy thời gian còn lại để thanh toán (phút)

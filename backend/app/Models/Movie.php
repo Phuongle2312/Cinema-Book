@@ -23,7 +23,6 @@ class Movie extends Model
         'synopsis',
         'duration',
         'release_date',
-        'rating',
         'age_rating',
         'poster_url',
         'banner_url',
@@ -34,7 +33,6 @@ class Movie extends Model
 
     protected $casts = [
         'release_date' => 'date',
-        'rating' => 'decimal:1',
         'is_featured' => 'boolean',
     ];
 
@@ -72,15 +70,14 @@ class Movie extends Model
     // Một phim có nhiều diễn viên/đạo diễn (many-to-many)
     public function cast()
     {
-        return $this->belongsToMany(Cast::class, 'movie_cast')
-            ->withPivot('role', 'character_name', 'order')
-            ->orderBy('order');
+        return $this->belongsToMany(Cast::class, 'movie_cast', 'movie_id', 'cast_id')
+            ->withPivot('role', 'character_name');
     }
 
     // Lấy chỉ diễn viên
     public function actors()
     {
-        return $this->belongsToMany(Cast::class, 'movie_cast')
+        return $this->belongsToMany(Cast::class, 'movie_cast', 'movie_id', 'cast_id')
             ->wherePivot('role', 'actor')
             ->withPivot('character_name', 'order')
             ->orderBy('order');
@@ -89,7 +86,7 @@ class Movie extends Model
     // Lấy chỉ đạo diễn
     public function directors()
     {
-        return $this->belongsToMany(Cast::class, 'movie_cast')
+        return $this->belongsToMany(Cast::class, 'movie_cast', 'movie_id', 'cast_id')
             ->wherePivot('role', 'director')
             ->withPivot('order')
             ->orderBy('order');
@@ -98,13 +95,13 @@ class Movie extends Model
     // Một phim có nhiều suất chiếu
     public function showtimes()
     {
-        return $this->hasMany(Showtime::class);
+        return $this->hasMany(Showtime::class, 'movie_id', 'movie_id');
     }
 
     // Một phim có nhiều reviews
     public function reviews()
     {
-        return $this->hasMany(Review::class);
+        return $this->hasMany(Review::class, 'movie_id', 'movie_id');
     }
 
     /**
@@ -144,7 +141,7 @@ class Movie extends Model
     public function scopeByGenre($query, $genreId)
     {
         return $query->whereHas('genres', function ($q) use ($genreId) {
-            $q->where('genres.id', $genreId);
+            $q->where('genres.genre_id', $genreId);
         });
     }
 
@@ -152,7 +149,7 @@ class Movie extends Model
     public function scopeByLanguage($query, $languageId)
     {
         return $query->whereHas('languages', function ($q) use ($languageId) {
-            $q->where('languages.id', $languageId);
+            $q->where('languages.language_id', $languageId);
         });
     }
 

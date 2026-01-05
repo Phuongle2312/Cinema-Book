@@ -13,6 +13,7 @@ use Carbon\Carbon;
 class SeatLock extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'lock_id';
 
     protected $fillable = [
         'seat_id',

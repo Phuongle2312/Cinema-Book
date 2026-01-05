@@ -13,7 +13,21 @@ return new class extends Migration
     {
         Schema::create('promotions', function (Blueprint $table) {
             $table->id();
+            $table->string('code')->unique()->comment('Mã khuyến mãi');
+            $table->text('description')->nullable()->comment('Mô tả chi tiết');
+            $table->enum('discount_type', ['percentage', 'fixed'])->default('percentage')->comment('Loại giảm giá: % hoặc số tiền cố định');
+            $table->decimal('discount_value', 10, 2)->comment('Giá trị giảm giá');
+            $table->decimal('min_purchase_amount', 10, 2)->nullable()->comment('Số tiền tối thiểu để áp dụng');
+            $table->decimal('max_discount_amount', 10, 2)->nullable()->comment('Số tiền giảm tối đa (cho percentage)');
+            $table->dateTime('valid_from')->nullable()->comment('Ngày bắt đầu hiệu lực');
+            $table->dateTime('valid_to')->nullable()->comment('Ngày kết thúc hiệu lực');
+            $table->integer('max_uses')->nullable()->comment('Số lần sử dụng tối đa');
+            $table->integer('current_uses')->default(0)->comment('Số lần đã sử dụng');
+            $table->boolean('is_active')->default(true)->comment('Trạng thái kích hoạt');
             $table->timestamps();
+            
+            $table->index('code');
+            $table->index(['valid_from', 'valid_to']);
         });
     }
 

@@ -7,6 +7,9 @@ use App\Http\Controllers\Api\MovieController;
 use App\Http\Controllers\Api\TheaterController;
 use App\Http\Controllers\Api\ShowtimeController;
 use App\Http\Controllers\Api\BookingController;
+use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PromotionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,13 +37,19 @@ Route::get('/test', function () {
 
 // Shorthand routes (dễ nhớ hơn)
 Route::post('/login', [AuthController::class, 'login']);
+// Named route for Sanctum auth redirection
+Route::get('/login', function () {
+    return response()->json(['message' => 'Unauthenticated.'], 401);
+})->name('login');
 Route::post('/register', [AuthController::class, 'register']);
 
 // Full routes với prefix 'auth'
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
-
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+    
     // Social Login
     Route::get('/google', [AuthController::class, 'redirectToGoogle']);
     Route::get('/google/callback', [AuthController::class, 'handleGoogleCallback']);
@@ -57,6 +66,7 @@ Route::prefix('movies')->group(function () {
     Route::get('/search', [MovieController::class, 'search']);       // GET /api/movies/search?q=
     Route::get('/filter', [MovieController::class, 'filter']);       // GET /api/movies/filter
     Route::get('/{id}', [MovieController::class, 'show']);           // GET /api/movies/{id}
+    Route::get('/{id}/reviews', [ReviewController::class, 'index']); // GET /api/movies/{id}/reviews
 });
 
 // ============================================
@@ -76,6 +86,21 @@ Route::prefix('showtimes')->group(function () {
 });
 
 // ============================================
+// PROMOTIONS ROUTES (Public)
+// ============================================
+// ============================================
+// LOGOUT ROUTES (Handled manually for idempotency)
+// ============================================
+// Using match(['get', 'post']) to allow browser testing without MethodNotAllowed error
+Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout']);
+Route::prefix('auth')->group(function () {
+    Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout']);
+});
+
+Route::get('/promotions', [PromotionController::class, 'index']);
+Route::post('/promotions/validate', [PromotionController::class, 'validate']);
+
+// ============================================
 // PROTECTED ROUTES (Cần authentication)
 // ============================================
 Route::middleware('auth:sanctum')->group(function () {
@@ -93,6 +118,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // BOOKING ROUTES
     // ============================================
     Route::prefix('bookings')->group(function () {
+        Route::get('/', [BookingController::class, 'userBookings']);              // GET /api/bookings (List my bookings)
         Route::get('/{id}', [BookingController::class, 'show']);                  // GET /api/bookings/{id}
         Route::post('/', [BookingController::class, 'store']);                    // POST /api/bookings
         Route::post('/{id}/pay', [BookingController::class, 'pay']);              // POST /api/bookings/{id}/pay
@@ -100,7 +126,41 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ============================================
-    // AUTH ROUTES (Protected)
+    // REVIEWS ROUTES
     // ============================================
-    Route::post('/logout', [AuthController::class, 'logout']);         // POST /api/logout
+    Route::post('/movies/{id}/reviews', [ReviewController::class, 'store']); // POST /api/movies/{id}/reviews
+    
+    // ============================================
+    // NOTIFICATIONS ROUTES
+    // ============================================
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);              // GET /api/notifications
+        Route::post('/{id}/read', [NotificationController::class, 'markAsRead']); // POST /api/notifications/{id}/read
+        Route::post('/read-all', [NotificationController::class, 'markAllAsRead']); // POST /api/notifications/read-all
+    });
+    
+    // Logout removed from here to be handled manually
+});
+
+// ============================================
+// ADMIN ROUTES (Cần authentication + admin role)
+// ============================================
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    
+    // CRUD Theaters
+    Route::apiResource('theaters', \App\Http\Controllers\Api\Admin\TheaterController::class);
+    
+    // CRUD Movies
+    Route::apiResource('movies', \App\Http\Controllers\Api\Admin\MovieController::class);
+    
+    // CRUD Showtimes
+    Route::apiResource('showtimes', \App\Http\Controllers\Api\Admin\ShowtimeController::class);
+    
+    // Review Moderation
+    Route::prefix('reviews')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\Admin\ReviewController::class, 'index']);
+        Route::put('/{id}/approve', [\App\Http\Controllers\Api\Admin\ReviewController::class, 'approve']);
+        Route::put('/{id}/reject', [\App\Http\Controllers\Api\Admin\ReviewController::class, 'reject']);
+        Route::delete('/{id}', [\App\Http\Controllers\Api\Admin\ReviewController::class, 'destroy']);
+    });
 });

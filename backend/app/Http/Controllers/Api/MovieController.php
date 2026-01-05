@@ -38,7 +38,13 @@ class MovieController extends Controller
         // Sắp xếp
         $sortBy = $request->get('sort_by', 'release_date');
         $sortOrder = $request->get('sort_order', 'desc');
-        $query->orderBy($sortBy, $sortOrder);
+
+        if ($sortBy === 'rating') {
+            $query->withAvg('reviews', 'rating')
+                  ->orderBy('reviews_avg_rating', $sortOrder);
+        } else {
+            $query->orderBy($sortBy, $sortOrder);
+        }
 
         // Phân trang
         $perPage = $request->get('per_page', 12);
@@ -63,9 +69,10 @@ class MovieController extends Controller
     public function featured()
     {
         $movies = Movie::with(['genres', 'languages'])
+            ->withAvg('reviews', 'rating')
+            ->where('is_featured', true)
             ->whereIn('status', ['now_showing', 'coming_soon'])
-            ->where('rating', '>=', 7.0)
-            ->orderBy('rating', 'desc')
+            ->orderBy('reviews_avg_rating', 'desc')
             ->limit(10)
             ->get();
 
@@ -128,6 +135,7 @@ class MovieController extends Controller
         $query = $request->get('q');
 
         $movies = Movie::with(['genres', 'languages'])
+            ->withAvg('reviews', 'rating')
             ->where(function ($q) use ($query) {
                 $q->where('title', 'LIKE', "%{$query}%")
                     ->orWhere('description', 'LIKE', "%{$query}%")
@@ -135,7 +143,7 @@ class MovieController extends Controller
                         $castQuery->where('name', 'LIKE', "%{$query}%");
                     });
             })
-            ->orderBy('rating', 'desc')
+            ->orderBy('reviews_avg_rating', 'desc')
             ->paginate(12);
 
         return response()->json([
@@ -195,7 +203,11 @@ class MovieController extends Controller
 
         // Lọc theo rating tối thiểu
         if ($request->filled('rating')) {
-            $query->where('rating', '>=', $request->rating);
+             $query->withAvg('reviews', 'rating')
+                   ->having('reviews_avg_rating', '>=', $request->rating);
+        } else {
+             // Always load avg rating for sorting if not filtered
+             $query->withAvg('reviews', 'rating');
         }
 
         // Lọc theo ngày chiếu
@@ -211,7 +223,7 @@ class MovieController extends Controller
         }
 
         // Sắp xếp
-        $query->orderBy('rating', 'desc');
+        $query->orderBy('reviews_avg_rating', 'desc');
 
         $movies = $query->paginate(12);
 
