@@ -23,3 +23,11 @@
 - [x] Test core flows (Booking, Payment, Seat selection)
 - [x] Audit APIs and create API.md
 - [x] Final project status report
+
+## Frontend Refactoring (Real API Integration)
+- [x] **bookingService.js**: Replace mock data with real API calls
+    - [x] `createBooking` (`POST /api/bookings`)
+    - [x] `getBookingById` (`GET /api/bookings/{id}`)
+    - [x] `processPayment` (`POST /api/bookings/{id}/pay`)
+    - [x] `getETicket` (`GET /api/bookings/e-ticket/{id}`)
+    - [x] `getUserBookings` (`GET /api/user/bookings`)

@@ -22,33 +22,39 @@ class ShowtimeController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Showtime::with(['movie', 'room.theater']);
+        // Ghi log để debug params
+        \Log::info('GET /api/showtimes Params:', $request->all());
 
-        // Lọc theo phim
-        if ($request->has('movie_id')) {
+        $query = Showtime::with(['movie', 'room.theater.city']);
+
+        // 1. Lọc theo Phim
+        if ($request->has('movie_id') && $request->movie_id != null) {
             $query->where('movie_id', $request->movie_id);
         }
 
-        // Lọc theo rạp
-        if ($request->has('theater_id')) {
+        // 2. Lọc theo Rạp
+        if ($request->has('theater_id') && $request->theater_id != null) {
             $query->whereHas('room', function ($q) use ($request) {
                 $q->where('theater_id', $request->theater_id);
             });
         }
 
-        // Lọc theo ngày
-        if ($request->has('date')) {
-            $date = $request->date; // Y-m-d
-            $query->whereDate('start_time', $date);
+        // 3. Lọc theo Ngày
+        if ($request->has('date') && $request->date != null) {
+            // Format: YYYY-MM-DD
+            $query->whereDate('start_time', $request->date);
         } else {
-            // Mặc định lấy từ thời điểm hiện tại trở đi
-            $query->where('start_time', '>=', Carbon::now());
+            // Mặc định: Chỉ lấy các suất chiếu từ thời điểm hiện tại trở đi
+            // Nếu bạn đang test dữ liệu cũ thì có thể comment dòng này lại
+            // $query->where('start_time', '>=', Carbon::now());
         }
 
+        // Sắp xếp theo thời gian
         $showtimes = $query->orderBy('start_time')->get();
 
         return response()->json([
             'success' => true,
+            'count' => $showtimes->count(),
             'data' => $showtimes
         ]);
     }

@@ -75,7 +75,7 @@ const Booking = () => {
                 // Group showtimes by Theater and then Format
                 const grouped = (data.data || []).reduce((acc, showtime) => {
                     const theaterName = showtime.room?.theater?.name || 'Unknown Theater';
-                    const city = showtime.room?.theater?.city || 'Unknown City';
+                    const city = showtime.room?.theater?.city?.name || 'Unknown City';
                     const format = showtime.format || 'Rạp 2D';
 
                     // Filter by selected city

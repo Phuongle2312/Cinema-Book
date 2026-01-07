@@ -30,17 +30,25 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = async (email, password) => {
-        const data = await authService.login(email, password);
-        setUser(data.data.user);
-        setIsAuthenticated(true);
-        return data;
+        const response = await authService.login(email, password);
+        if (response.success && response.data) {
+            setUser(response.data.user);
+            setIsAuthenticated(true);
+            return response;
+        } else {
+            throw response; // Throw error response to be caught in component
+        }
     };
 
     const register = async (userData) => {
-        const data = await authService.register(userData);
-        setUser(data.data.user);
-        setIsAuthenticated(true);
-        return data;
+        const response = await authService.register(userData);
+        if (response.success && response.data) {
+            setUser(response.data.user);
+            setIsAuthenticated(true);
+            return response;
+        } else {
+            throw response; // Throw error response to be caught in component
+        }
     };
 
     const logout = async () => {

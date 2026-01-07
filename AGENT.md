@@ -30,6 +30,10 @@ Cinema-Book is a modern cinema management and ticket booking system.
 2. **Models**: Use Eloquent relationships and avoid raw SQL where possible.
 3. **Frontend**: Keep components modular and use standard CSS.
 4. **Agent Rules**: When modifying the database, ensure 3NF compliance and update documenting `.md` files in the root directory.
+5. **Communication & Language**:
+    - **Chat**: Use **Vietnamese** for all communication with the user.
+    - **Code**: Use **English** for variable names, functions, classes, etc.
+    - **Comments & Documentation**: Use **Vietnamese** for code comments and documentation files (like this one).
 
 ---
 

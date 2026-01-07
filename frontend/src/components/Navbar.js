@@ -3,9 +3,13 @@ import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { Search, Popcorn, User, Menu, X } from 'lucide-react';
 import './Navbar.css';
 
+import { useAuth } from '../context/AuthContext';
+
 const Navbar = () => {
+    const { isAuthenticated, user, logout } = useAuth();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -24,6 +28,12 @@ const Navbar = () => {
             navigate(`/movies?q=${encodeURIComponent(searchQuery)}`);
             setSearchQuery('');
         }
+    };
+
+    const handleLogout = async () => {
+        await logout();
+        navigate('/login');
+        setIsUserMenuOpen(false);
     };
 
     return (
@@ -52,10 +62,50 @@ const Navbar = () => {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </form>
-                    <Link to="/login" className="btn-login">
-                        <User size={20} />
-                        <span>Login</span>
-                    </Link>
+
+                    {isAuthenticated ? (
+                        <div className="user-menu-container" style={{ position: 'relative' }}>
+                            <div 
+                                className="user-trigger" 
+                                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: 'white' }}
+                            >
+                                <span className="user-name">Hi, {user?.name}</span>
+                                <div className="avatar-circle" style={{ width: '35px', height: '35px', borderRadius: '50%', background: '#e50914', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                                    {user?.name?.charAt(0).toUpperCase()}
+                                </div>
+                            </div>
+                            
+                            {isUserMenuOpen && (
+                                <div className="user-dropdown" style={{
+                                    position: 'absolute',
+                                    top: '120%',
+                                    right: 0,
+                                    background: '#1a1a1a',
+                                    border: '1px solid #333',
+                                    borderRadius: '8px',
+                                    padding: '10px 0',
+                                    width: '180px',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                    zIndex: 1000
+                                }}>
+                                    <Link to="/user/profile" className="dropdown-item" style={{ display: 'block', padding: '10px 20px', color: '#fff', textDecoration: 'none', transition: 'background 0.2s' }} onClick={() => setIsUserMenuOpen(false)}>My Profile</Link>
+                                    <Link to="/user/bookings" className="dropdown-item" style={{ display: 'block', padding: '10px 20px', color: '#fff', textDecoration: 'none', transition: 'background 0.2s' }} onClick={() => setIsUserMenuOpen(false)}>My Bookings</Link>
+                                    {user?.role === 'admin' && (
+                                        <Link to="/admin/dashboard" className="dropdown-item" style={{ display: 'block', padding: '10px 20px', color: '#ffcc00', textDecoration: 'none', transition: 'background 0.2s' }} onClick={() => setIsUserMenuOpen(false)}>Admin Dashboard</Link>
+                                    )}
+                                    <div style={{ height: '1px', background: '#333', margin: '5px 0' }}></div>
+                                    <button onClick={handleLogout} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 20px', background: 'none', border: 'none', color: '#ff4d4d', cursor: 'pointer', fontSize: '14px' }}>Logout</button>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <Link to="/login" className="btn-login">
+                            <User size={20} />
+                            <span>Login</span>
+                        </Link>
+                    )}
+
                     <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
                         {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                     </button>
@@ -69,7 +119,27 @@ const Navbar = () => {
                     <li><NavLink to="/cinemas" onClick={() => setIsMobileMenuOpen(false)}>Cinemas</NavLink></li>
                     <li><NavLink to="/offers" onClick={() => setIsMobileMenuOpen(false)}>Offers</NavLink></li>
                     <li><NavLink to="/events" onClick={() => setIsMobileMenuOpen(false)}>Events</NavLink></li>
-                    <li><Link to="/login" className="btn-login-mobile" onClick={() => setIsMobileMenuOpen(false)}>Login</Link></li>
+                    {isAuthenticated ? (
+                        <>
+                            <li style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '10px', paddingTop: '10px' }}>
+                                <Link to="/user/profile" onClick={() => setIsMobileMenuOpen(false)} style={{ color: '#e50914' }}>Hi, {user?.name}</Link>
+                            </li>
+                            <li><Link to="/user/bookings" onClick={() => setIsMobileMenuOpen(false)}>My Bookings</Link></li>
+                            {user?.role === 'admin' && (
+                                <li><Link to="/admin/dashboard" onClick={() => setIsMobileMenuOpen(false)}>Admin Dashboard</Link></li>
+                            )}
+                            <li>
+                                <button 
+                                    onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} 
+                                    style={{ background: 'none', border: 'none', color: '#ff4d4d', fontSize: '1.2rem', padding: '1rem', width: '100%', textAlign: 'left', cursor: 'pointer' }}
+                                >
+                                    Logout
+                                </button>
+                            </li>
+                        </>
+                    ) : (
+                        <li><Link to="/login" className="btn-login-mobile" onClick={() => setIsMobileMenuOpen(false)}>Login</Link></li>
+                    )}
                 </ul>
             </div>
         </nav>
