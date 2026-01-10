@@ -27,6 +27,8 @@ class Showtime extends Model
         'available_seats',
     ];
 
+    protected $appends = ['format'];
+
     protected $casts = [
         'show_date' => 'date',
         'start_time' => 'datetime',
@@ -141,5 +143,30 @@ class Showtime extends Model
         return $this->seatLocks()
             ->where('expires_at', '>', Carbon::now())
             ->pluck('seat_id');
+    }
+
+    // Accessor: Format (2D/3D + Language) cho Frontend
+    public function getFormatAttribute()
+    {
+        // Logic: Lấy Type của Room + Language dựa trên ID
+        // Chẵn = Phụ Đề Anh, Lẻ = Phụ Đề Việt (giả lập để có dữ liệu 2 tab)
+        
+        $type = '2D';
+        if ($this->room && !empty($this->room->screen_type)) {
+            $rawType = $this->room->screen_type;
+            if ($rawType === 'standard') {
+                $type = '2D';
+            } elseif ($rawType === 'imax') {
+                $type = 'IMAX';
+            } else {
+                $type = ucfirst($rawType);
+            }
+        }
+        
+        // Return format string matches Frontend hardcoded tabs
+        // "2D Phụ Đề Anh", "2D Phụ Đề Việt"
+        $lang = ($this->showtime_id % 2 == 0) ? "Phụ Đề Anh" : "Phụ Đề Việt";
+        
+        return "$type $lang"; 
     }
 }

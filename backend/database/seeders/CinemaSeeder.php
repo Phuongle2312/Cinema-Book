@@ -16,94 +16,140 @@ class CinemaSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Create City
-        $city = City::firstOrCreate(
-            ['slug' => 'ho-chi-minh'],
-            [
-                'name' => 'Hồ Chí Minh',
-                'country' => 'Vietnam',
-                'timezone' => 'Asia/Ho_Chi_Minh'
-            ]
-        );
+        // Define Cities and their Theaters
+        $cities = [
+            'Hồ Chí Minh' => ['ho-chi-minh', [
+                ['name' => 'CGV Vincom Đồng Khởi', 'address' => '72 Lê Thánh Tôn, Q.1'],
+                ['name' => 'CGV Sư Vạn Hạnh', 'address' => 'Vạn Hạnh Mall, Q.10'],
+                ['name' => 'Galaxy Nguyễn Du', 'address' => '116 Nguyễn Du, Q.1']
+            ]],
+            'Hà Nội' => ['ha-noi', [
+                ['name' => 'CGV Vincom Bà Triệu', 'address' => '191 Bà Triệu'],
+                ['name' => 'Lotte Cinema Landmark', 'address' => 'Keangnam Tower'],
+                ['name' => 'BHD Star Discovery', 'address' => '302 Cầu Giấy']
+            ]],
+            'Đà Nẵng' => ['da-nang', [
+                ['name' => 'CGV Vĩnh Trung Plaza', 'address' => '255 Hùng Vương'],
+                ['name' => 'Lotte Cinema Đà Nẵng', 'address' => 'Tầng 5 Lotte Mart']
+            ]],
+            'Cần Thơ' => ['can-tho', [['name' => 'CGV Sense City', 'address' => '1 Đại Lộ Hòa Bình']]],
+            'Đồng Nai' => ['dong-nai', [['name' => 'CGV BigC Đồng Nai', 'address' => 'Xa Lộ Hà Nội, Biên Hòa']]],
+            'Hải Phòng' => ['hai-phong', [['name' => 'CGV AEON Mall', 'address' => 'Lê Chân, Hải Phòng']]],
+            'Quảng Ninh' => ['quang-ninh', [['name' => 'CGV Vincom Hạ Long', 'address' => 'Khu Cột Đồng Hồ, Hạ Long']]],
+        ];
 
-        // 2. Create Theater
-        $theater = Theater::firstOrCreate(
-            ['slug' => 'cgv-vincom-dong-khoi'],
-            [
-                'city_id' => $city->city_id,
-                'name' => 'CGV Vincom Đồng Khởi',
-                'address' => 'Tầng 3, TTTM Vincom Center B, 72 Lê Thánh Tôn, Bến Nghé, Quận 1',
-                'phone' => '1900 6017',
-                'description' => 'Rạp chiếu phim hiện đại nhất tại trung tâm thành phố.',
-                'is_active' => true,
-            ]
-        );
+        $movies = Movie::all();
 
-        // 3. Create Room
-        $room = Room::firstOrCreate(
-            ['name' => 'Room 1', 'theater_id' => $theater->theater_id],
-            [
-                'total_seats' => 50, // 5 rows * 10 columns
-                'screen_type' => 'IMAX',
-            ]
-        );
+        foreach ($cities as $cityName => $data) {
+            $slug = $data[0];
+            $theatersList = $data[1];
 
-        // 4. Create Seats (5 rows A-E, 10 columns 1-10)
-        $rows = ['A', 'B', 'C', 'D', 'E'];
-        foreach ($rows as $rowIndex => $row) {
-            for ($col = 1; $col <= 10; $col++) {
-                $seatType = 'standard';
-                $price = 100000;
+            // 1. Create City
+            $city = City::firstOrCreate(
+                ['slug' => $slug],
+                ['name' => $cityName, 'country' => 'Vietnam', 'timezone' => 'Asia/Ho_Chi_Minh']
+            );
 
-                if ($row === 'E') {
-                    $seatType = 'couple';
-                    $price = 180000;
-                } elseif ($row === 'D') {
-                    $seatType = 'vip';
-                    $price = 120000;
-                }
-
-                Seat::firstOrCreate(
+            foreach ($theatersList as $theaterData) {
+                // 2. Create Theater
+                $theater = Theater::firstOrCreate(
+                    ['slug' => Str::slug($theaterData['name'])],
                     [
-                        'room_id' => $room->room_id,
-                        'row' => $row,
-                        'number' => $col,
-                    ],
-                    [
-                        'seat_code' => $row . $col,
-                        'seat_type' => $seatType,
-                        'is_available' => true,
+                        'city_id' => $city->city_id,
+                        'name' => $theaterData['name'],
+                        'address' => $theaterData['address'],
+                        'phone' => '1900 6017',
+                        'description' => 'Rạp chiếu phim tiêu chuẩn quốc tế.',
+                        'is_active' => true,
                     ]
                 );
-            }
-        }
 
-        // 5. Create Showtimes for existing movies
-        $movies = Movie::all();
-        if ($movies->count() > 0) {
-            foreach ($movies as $index => $movie) {
-                // Create showtimes for today and tomorrow
-                for ($i = 0; $i < 2; $i++) {
-                    $date = Carbon::today()->addDays($i);
-                    $startTimes = ['10:00', '14:00', '18:00', '21:00'];
+                // 3. Create Rooms (2 rooms per theater)
+                $roomTypes = [
+                    ['name' => 'Room 1 (IMAX)', 'type' => 'IMAX'],
+                    ['name' => 'Room 2 (Standard)', 'type' => 'standard']
+                ];
+                
+                foreach ($roomTypes as $rType) {
+                    $room = Room::firstOrCreate(
+                        ['name' => $rType['name'], 'theater_id' => $theater->theater_id],
+                        [
+                            'total_seats' => 50,
+                            'screen_type' => $rType['type'],
+                        ]
+                    );
 
-                    foreach ($startTimes as $time) {
-                        Showtime::firstOrCreate(
-                            [
-                                'movie_id' => $movie->movie_id,
-                                'room_id' => $room->room_id,
-                                'show_date' => $date->format('Y-m-d'),
-                                'show_time' => $time,
-                            ],
-                            [
-                                'base_price' => 100000,
-                                'vip_price' => 120000,
-                                'is_active' => true,
-                                'available_seats' => 50,
-                            ]
-                        );
+                    // 4. Create Seats
+                    $this->createSeatsForRoom($room);
+
+                    // 5. Create Showtimes (14 days)
+                    if ($movies->count() > 0) {
+                        $this->createShowtimesForRoom($room, $movies);
                     }
                 }
+            }
+        }
+    }
+
+    private function createSeatsForRoom($room)
+    {
+        // Check if seats exist to avoid redundant checks per seat
+        if (Seat::where('room_id', $room->room_id)->exists()) return;
+
+        $rows = ['A', 'B', 'C', 'D', 'E'];
+        foreach ($rows as $row) {
+            for ($col = 1; $col <= 10; $col++) {
+                $seatType = 'standard';
+                $extra = 0;
+                
+                if ($row === 'E') {
+                    $seatType = 'couple';
+                    $extra = 80000;
+                } elseif ($row === 'D') {
+                    $seatType = 'vip';
+                    $extra = 20000;
+                }
+
+                Seat::create([
+                    'room_id' => $room->room_id,
+                    'row' => $row,
+                    'number' => $col,
+                    'seat_code' => $row . $col,
+                    'seat_type' => $seatType,
+                    'is_available' => true,
+                    'extra_price' => $extra
+                ]);
+            }
+        }
+    }
+
+    private function createShowtimesForRoom($room, $movies)
+    {
+        // Create 14 days schedule
+        for ($i = 0; $i < 14; $i++) {
+            $date = Carbon::today()->addDays($i);
+            
+            // Standard slots
+            $slots = ['10:00', '13:00', '16:00', '19:00', '22:00'];
+            
+            foreach ($slots as $idx => $time) {
+                // Rotate movies
+                $movie = $movies[$idx % $movies->count()];
+
+                Showtime::firstOrCreate(
+                    [
+                        'movie_id' => $movie->movie_id,
+                        'room_id' => $room->room_id,
+                        'show_date' => $date->format('Y-m-d'),
+                        'show_time' => $time,
+                    ],
+                    [
+                        'base_price' => 100000,
+                        'vip_price' => 120000,
+                        'is_active' => true,
+                        'available_seats' => 50,
+                    ]
+                );
             }
         }
     }
