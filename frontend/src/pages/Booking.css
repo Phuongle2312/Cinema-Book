@@ -363,10 +363,14 @@
 }
 
 .seat.selected {
-    background: var(--primary) !important;
+    background: #e50914 !important;
+    /* Netflix/Vibrant Red */
     color: white !important;
-    border-color: var(--primary);
-    transform: scale(1.1);
+    border-color: #ff4d4d;
+    transform: scale(1.15);
+    /* Slightly larger */
+    box-shadow: 0 0 20px rgba(229, 9, 20, 0.6);
+    z-index: 5;
 }
 
 .seat.booked {
