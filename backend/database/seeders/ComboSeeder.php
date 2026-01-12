@@ -3,16 +3,20 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Combo;
+use Illuminate\Support\Facades\DB;
 
 class ComboSeeder extends Seeder
 {
     /**
      * Run the database seeds.
-     * Tạo dữ liệu mẫu cho các combo đồ ăn, nước uống
      */
     public function run(): void
     {
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        DB::table('combo_items')->truncate();
+        DB::table('combos')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
         $combos = [
             [
                 'name' => 'Combo 1 - Bắp Nước Nhỏ',
@@ -22,8 +26,10 @@ class ComboSeeder extends Seeder
                     ['item' => 'Coca Cola', 'size' => 'S'],
                 ],
                 'price' => 50000,
-                'image_url' => '/images/combos/combo1.jpg',
+                'image_url' => 'https://api.chieu.id.vn/storage/combos/combo1.png',
                 'is_available' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'name' => 'Combo 2 - Bắp Nước Lớn',
@@ -33,60 +39,45 @@ class ComboSeeder extends Seeder
                     ['item' => 'Coca Cola', 'size' => 'L'],
                 ],
                 'price' => 80000,
-                'image_url' => '/images/combos/combo2.jpg',
+                'image_url' => 'https://api.chieu.id.vn/storage/combos/combo2.png',
                 'is_available' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
-                'name' => 'Combo 3 - Bắp Đôi',
+                'name' => 'Combo 3 - Đôi Bạn Thân',
                 'description' => '2 Bắp rang bơ lớn + 2 Nước ngọt lớn',
                 'items' => [
                     ['item' => 'Bắp rang bơ', 'size' => 'L', 'quantity' => 2],
                     ['item' => 'Coca Cola', 'size' => 'L', 'quantity' => 2],
                 ],
                 'price' => 150000,
-                'image_url' => '/images/combos/combo3.jpg',
+                'image_url' => 'https://api.chieu.id.vn/storage/combos/combo3.png',
                 'is_available' => true,
-            ],
-            [
-                'name' => 'Combo 4 - Snack Mix',
-                'description' => 'Bắp rang + Nachos + 2 Nước ngọt',
-                'items' => [
-                    ['item' => 'Bắp rang bơ', 'size' => 'M'],
-                    ['item' => 'Nachos phô mai', 'size' => 'M'],
-                    ['item' => 'Pepsi', 'size' => 'M', 'quantity' => 2],
-                ],
-                'price' => 120000,
-                'image_url' => '/images/combos/combo4.jpg',
-                'is_available' => true,
-            ],
-            [
-                'name' => 'Combo 5 - Family',
-                'description' => 'Combo gia đình: 3 Bắp lớn + 3 Nước ngọt lớn + Khoai tây chiên',
-                'items' => [
-                    ['item' => 'Bắp rang bơ', 'size' => 'L', 'quantity' => 3],
-                    ['item' => 'Nước ngọt', 'size' => 'L', 'quantity' => 3],
-                    ['item' => 'Khoai tây chiên', 'size' => 'L'],
-                ],
-                'price' => 250000,
-                'image_url' => '/images/combos/combo5.jpg',
-                'is_available' => true,
-            ],
-            [
-                'name' => 'Combo 6 - Premium',
-                'description' => 'Combo cao cấp: Bắp caramel + Nước ép trái cây + Hotdog',
-                'items' => [
-                    ['item' => 'Bắp caramel', 'size' => 'L'],
-                    ['item' => 'Nước ép cam', 'size' => 'M'],
-                    ['item' => 'Hotdog phô mai', 'size' => 'Regular'],
-                ],
-                'price' => 110000,
-                'image_url' => '/images/combos/combo6.jpg',
-                'is_available' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
         ];
 
-        foreach ($combos as $combo) {
-            Combo::create($combo);
+        foreach ($combos as $comboData) {
+            // Extract items
+            $items = $comboData['items'];
+            unset($comboData['items']);
+
+            // Insert Combo
+            $comboId = DB::table('combos')->insertGetId($comboData);
+
+            // Insert Combo Items
+            foreach ($items as $item) {
+                DB::table('combo_items')->insert([
+                    'combo_id' => $comboId,
+                    'item_name' => $item['item'],
+                    'item_size' => $item['size'],
+                    'quantity' => $item['quantity'] ?? 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
         }
     }
 }

@@ -14,20 +14,14 @@ class Cast extends Model
 
     protected $fillable = [
         'name',
-        'slug',
+        'type',
+        'avatar',
         'bio',
-        'avatar_url',
-        'date_of_birth',
-        'nationality',
-    ];
-
-    protected $casts = [
-        'date_of_birth' => 'date',
     ];
 
     public function movies()
     {
         return $this->belongsToMany(Movie::class, 'movie_cast', 'cast_id', 'movie_id')
-            ->withPivot('role', 'character_name', 'order');
+            ->withPivot('role', 'character_name');
     }
 }

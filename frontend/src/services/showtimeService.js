@@ -17,7 +17,7 @@ const showtimeService = {
     },
 
     // Lấy danh sách ghế cho showtime
-    getSeats: async (showtimeId) => {
+    getShowtimeSeats: async (showtimeId) => {
         try {
             const response = await api.get(`/showtimes/${showtimeId}/seats`);
             return response.data;

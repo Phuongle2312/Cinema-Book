@@ -18,54 +18,30 @@ class Showtime extends Model
     protected $fillable = [
         'movie_id',
         'room_id',
-        'show_date',
-        'show_time',
         'start_time',
         'base_price',
-        'vip_price',
-        'is_active',
-        'available_seats',
+        'status',
     ];
 
     protected $casts = [
-        'show_date' => 'date',
         'start_time' => 'datetime',
         'base_price' => 'decimal:0',
-        'vip_price' => 'decimal:0',
-        'is_active' => 'boolean',
     ];
 
     /**
-     * Accessor: Tính end_time tự động từ start_time + movie duration
+     * Accessor: Tự động tính end_time nếu null
      */
-    public function getEndTimeAttribute()
+    public function getEndTimeAttribute($value)
     {
-        if (!$this->start_time || !$this->movie) {
-            return null;
+        if ($value) {
+            return Carbon::parse($value);
         }
-        return $this->start_time->copy()->addMinutes($this->movie->duration);
-    }
 
-    /**
-     * Boot method - Tự động tính start_time và end_time
-     */
-    protected static function boot()
-    {
-        parent::boot();
+        if ($this->start_time && $this->movie) {
+            return $this->start_time->copy()->addMinutes($this->movie->duration);
+        }
 
-        static::creating(function ($showtime) {
-            // Tạo start_time từ show_date + show_time
-            if (empty($showtime->start_time)) {
-                $showtime->start_time = Carbon::parse(
-                    $showtime->show_date->format('Y-m-d') . ' ' . $showtime->show_time
-                );
-            }
-
-            // Set available_seats = total_seats của rooms
-            if (empty($showtime->available_seats) && $showtime->room) {
-                $showtime->available_seats = $showtime->room->total_seats;
-            }
-        });
+        return $this->start_time;
     }
 
     /**
@@ -74,7 +50,7 @@ class Showtime extends Model
 
     public function movie()
     {
-        return $this->belongsTo(Movie::class);
+        return $this->belongsTo(Movie::class, 'movie_id', 'movie_id');
     }
 
     public function room()
@@ -84,62 +60,25 @@ class Showtime extends Model
 
     public function bookings()
     {
-        return $this->hasMany(Booking::class);
+        return $this->hasMany(Booking::class, 'showtime_id', 'showtime_id');
     }
 
     public function seatLocks()
     {
-        return $this->hasMany(SeatLock::class);
+        return $this->hasMany(SeatLock::class, 'showtime_id', 'showtime_id');
     }
 
     /**
      * Scopes
      */
 
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
-
     public function scopeByMovie($query, $movieId)
     {
         return $query->where('movie_id', $movieId);
     }
 
-    public function scopeByDate($query, $date)
-    {
-        return $query->whereDate('show_date', $date);
-    }
-
     public function scopeUpcoming($query)
     {
         return $query->where('start_time', '>', Carbon::now());
-    }
-
-    /**
-     * Helper Methods
-     */
-
-    // Kiểm tra còn ghế trống không
-    public function hasAvailableSeats(): bool
-    {
-        return $this->available_seats > 0;
-    }
-
-    // Lấy danh sách ghế đã đặt
-    public function getBookedSeats()
-    {
-        return BookingDetail::whereHas('booking', function ($query) {
-            $query->where('showtime_id', $this->showtime_id)
-                  ->whereIn('status', ['pending', 'confirmed']);
-        })->pluck('seat_id');
-    }
-
-    // Lấy danh sách ghế đang bị lock
-    public function getLockedSeats()
-    {
-        return $this->seatLocks()
-            ->where('expires_at', '>', Carbon::now())
-            ->pluck('seat_id');
     }
 }

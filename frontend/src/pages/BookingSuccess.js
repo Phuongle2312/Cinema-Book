@@ -16,9 +16,13 @@ const BookingSuccess = () => {
         const fetchETicket = async () => {
             try {
                 const data = await bookingService.getETicket(bookingId);
-                setETicket(data.data);
+                if (data.success) {
+                    setETicket(data.data);
+                } else {
+                    setError(data.message || "Could not retrieve E-Ticket.");
+                }
             } catch (err) {
-                setError("Could not retrieve E-Ticket. Please check your profile.");
+                setError("An error occurred while loading your ticket.");
             } finally {
                 setLoading(false);
             }
@@ -30,9 +34,29 @@ const BookingSuccess = () => {
         window.print();
     };
 
-    if (loading) return <div className="loading-screen">Generating E-Ticket...</div>;
-    if (error) return <div className="error-screen">{error}</div>;
-    if (!eTicket) return null;
+    if (loading) return (
+        <div className="success-page">
+            <Navbar />
+            <div className="loading-screen text-white pt-20 text-center">Generating E-Ticket...</div>
+        </div>
+    );
+
+    if (error) return (
+        <div className="success-page">
+            <Navbar />
+            <div className="error-screen text-white pt-20 text-center">
+                <p className="text-xl mb-4">{error}</p>
+                <Link to="/" className="text-primary hover:underline">Back to Home</Link>
+            </div>
+        </div>
+    );
+
+    if (!eTicket) return (
+        <div className="success-page">
+            <Navbar />
+            <div className="text-white pt-20 text-center">Ticket not found or still processing.</div>
+        </div>
+    );
 
     return (
         <div className="success-page">
@@ -53,7 +77,11 @@ const BookingSuccess = () => {
 
                         <div className="ticket-body">
                             <div className="ticket-poster">
-                                <img src={eTicket.movie.poster} alt="Movie Poster" />
+                                <img
+                                    src={eTicket.movie.poster || 'https://via.placeholder.com/300x450?text=No+Poster'}
+                                    alt="Movie Poster"
+                                    onError={(e) => { e.target.src = 'https://via.placeholder.com/300x450?text=No+Poster'; }}
+                                />
                             </div>
                             <div className="ticket-info">
                                 <h2>{eTicket.movie.title}</h2>

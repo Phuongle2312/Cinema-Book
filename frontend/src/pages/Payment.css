@@ -204,3 +204,103 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Redesigned Voucher Section */
+.voucher-section {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+.voucher-label-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.voucher-label-group label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.voucher-input-group {
+    display: flex;
+    position: relative;
+    gap: 0;
+}
+
+.voucher-input {
+    flex: 1;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    padding: 10px 14px;
+    color: white;
+    font-size: 0.95rem;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.voucher-input:focus {
+    border-color: var(--primary);
+    background: rgba(229, 9, 20, 0.05);
+}
+
+.btn-apply-voucher {
+    background: rgba(229, 9, 20, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-left: none;
+    color: var(--primary);
+    padding: 0 1.25rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-radius: 0 8px 8px 0;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+}
+
+.btn-apply-voucher:hover:not(:disabled) {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.btn-apply-voucher:disabled {
+    color: rgba(255, 255, 255, 0.2);
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.voucher-applied-msg {
+    margin-top: 0.75rem;
+    color: #4ade80;
+    /* bright green */
+    font-size: 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(74, 222, 128, 0.1);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(74, 222, 128, 0.2);
+}
+
+.btn-remove-voucher {
+    background: transparent;
+    border: none;
+    color: #ef4444;
+    font-size: 0.8rem;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+}
+
+.btn-remove-voucher:hover {
+    color: #f87171;
+}

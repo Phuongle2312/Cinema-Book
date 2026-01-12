@@ -74,27 +74,27 @@ class Booking extends Model
     // Booking thuộc về một showtime
     public function showtime()
     {
-        return $this->belongsTo(Showtime::class);
+        return $this->belongsTo(Showtime::class, 'showtime_id', 'showtime_id');
     }
 
     // Booking có nhiều ghế (through booking_details)
     public function seats()
     {
-        return $this->belongsToMany(Seat::class, 'booking_details', 'booking_id', 'seat_id')
-            ->withPivot('price', 'status')
+        return $this->belongsToMany(Seat::class, 'booking_seats', 'booking_id', 'seat_id')
+            ->withPivot('price')
             ->withTimestamps();
     }
 
     // Booking có nhiều booking details (chi tiết)
     public function bookingDetails()
     {
-        return $this->hasMany(BookingDetail::class, 'booking_id', 'booking_id');
+        return $this->hasMany(BookingSeat::class, 'booking_id', 'booking_id');
     }
 
     // Booking có một transaction
     public function transaction()
     {
-        return $this->hasOne(Transaction::class);
+        return $this->hasOne(Transaction::class, 'booking_id', 'booking_id');
     }
 
     // Booking có nhiều combos (through booking_combos)
@@ -106,7 +106,7 @@ class Booking extends Model
             'booking_id',
             'combo_id'
         )->withPivot('quantity', 'unit_price', 'total_price')
-         ->withTimestamps();
+            ->withTimestamps();
     }
 
     // Booking có nhiều booking combos (chi tiết)
@@ -163,9 +163,9 @@ class Booking extends Model
     // Kiểm tra booking đã hết hạn chưa
     public function isExpired(): bool
     {
-        return $this->status === 'pending' && 
-               $this->expires_at && 
-               $this->expires_at->isPast();
+        return $this->status === 'pending' &&
+            $this->expires_at &&
+            $this->expires_at->isPast();
     }
 
     // Kiểm tra booking đã confirmed chưa

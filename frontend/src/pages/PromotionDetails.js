@@ -20,8 +20,8 @@ const PromotionDetails = () => {
             setActionState({ loading: false, completed: true });
 
             if (promotion.type === 'offer') {
-                const code = `CINEBOOK-${Math.floor(Math.random() * 10000)}`;
-                alert(`Offer Claimed Successfully!\n\nYour Code: ${code}\n\nPresent this code at the ticket counter.`);
+                const realCode = promotion.title.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+                alert(`Offer Claimed Successfully!\n\nYour Code: ${realCode}\n\nUse this code at the checkout page to get your discount.`);
             } else {
                 alert("Registration Successful!\n\nWe have sent a confirmation email to your inbox.");
             }

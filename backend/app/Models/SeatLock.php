@@ -19,7 +19,7 @@ class SeatLock extends Model
         'seat_id',
         'showtime_id',
         'user_id',
-        'session_id',
+        'locked_at',
         'expires_at',
     ];
 

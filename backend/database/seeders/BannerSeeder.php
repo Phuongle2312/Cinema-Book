@@ -35,6 +35,7 @@ class BannerSeeder extends Seeder
                     'poster_url' => $item['image'],
                     'banner_url' => $item['image'],
                     'status' => 'now_showing',
+                    'is_featured' => true,
                 ]
             );
 

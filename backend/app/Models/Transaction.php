@@ -17,19 +17,19 @@ class Transaction extends Model
         'amount',
         'payment_method',
         'status',
-        'payment_data',
+        'payment_details',
         'paid_at',
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
-        'payment_data' => 'array',
+        'amount' => 'decimal:0',
+        'payment_details' => 'array',
         'paid_at' => 'datetime',
     ];
 
     public function booking()
     {
-        return $this->belongsTo(Booking::class);
+        return $this->belongsTo(Booking::class, 'booking_id', 'booking_id');
     }
 
     public function user()

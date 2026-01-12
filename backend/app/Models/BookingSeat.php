@@ -5,28 +5,26 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class BookingDetail extends Model
+class BookingSeat extends Model
 {
     use HasFactory;
 
-    protected $table = 'booking_details';
-    protected $primaryKey = 'detail_id';
+    protected $table = 'booking_seats';
+    protected $primaryKey = 'id';
 
     protected $fillable = [
         'booking_id',
         'seat_id',
+        'showtime_id',
         'price',
-        'status',
-        'used_at',
     ];
 
     protected $casts = [
         'price' => 'decimal:0',
-        'used_at' => 'datetime',
     ];
 
     /**
-     * Relationship: Detail thuộc về một booking
+     * Relationship: Seat thuộc về một booking
      */
     public function booking()
     {
@@ -34,10 +32,18 @@ class BookingDetail extends Model
     }
 
     /**
-     * Relationship: Detail tương ứng với một ghế
+     * Relationship: Ghế cụ thể
      */
     public function seat()
     {
         return $this->belongsTo(Seat::class, 'seat_id', 'seat_id');
+    }
+
+    /**
+     * Relationship: Suất chiếu
+     */
+    public function showtime()
+    {
+        return $this->belongsTo(Showtime::class, 'showtime_id', 'showtime_id');
     }
 }

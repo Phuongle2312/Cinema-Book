@@ -18,28 +18,9 @@ class Seat extends Model
         'room_id',
         'row',
         'number',
-        'seat_code',
-        'seat_type',
-        'is_available',
+        'type',
+        'extra_price',
     ];
-
-    protected $casts = [
-        'is_available' => 'boolean',
-    ];
-
-    /**
-     * Boot method - Tự động tạo seat_code
-     */
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($seat) {
-            if (empty($seat->seat_code)) {
-                $seat->seat_code = $seat->row . $seat->number;
-            }
-        });
-    }
 
     /**
      * Relationships
@@ -52,8 +33,8 @@ class Seat extends Model
 
     public function bookings()
     {
-        return $this->belongsToMany(Booking::class, 'booking_details', 'seat_id', 'booking_id')
-            ->withPivot('price', 'status')
+        return $this->belongsToMany(Booking::class, 'booking_seats', 'seat_id', 'booking_id')
+            ->withPivot('price')
             ->withTimestamps();
     }
 
@@ -66,35 +47,8 @@ class Seat extends Model
      * Scopes
      */
 
-    public function scopeAvailable($query)
-    {
-        return $query->where('is_available', true);
-    }
-
     public function scopeByType($query, $type)
     {
-        return $query->where('seat_type', $type);
-    }
-
-    /**
-     * Helper Methods
-     */
-
-    // Kiểm tra ghế có bị đặt trong showtime này không
-    public function isBookedForShowtime($showtimeId): bool
-    {
-        return BookingDetail::whereHas('booking', function ($query) use ($showtimeId) {
-            $query->where('showtime_id', $showtimeId)
-                  ->whereIn('status', ['pending', 'confirmed']);
-        })->where('seat_id', $this->seat_id)->exists();
-    }
-
-    // Kiểm tra ghế có bị lock trong showtime này không
-    public function isLockedForShowtime($showtimeId): bool
-    {
-        return SeatLock::where('seat_id', $this->seat_id)
-            ->where('showtime_id', $showtimeId)
-            ->where('expires_at', '>', now())
-            ->exists();
+        return $query->where('type', $type);
     }
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Star, Clock, Calendar, Globe, Play, ChevronLeft, User, MessageCircle, MapPin } from 'lucide-react';
 import movieService from '../services/movieService';
+import { getYouTubeEmbedUrl } from '../utils/videoUtils';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import './MovieDetails.css';
@@ -131,7 +132,7 @@ const MovieDetails = () => {
                                 <h2 className="section-title">Trailer</h2>
                                 <div className="video-container">
                                     <iframe
-                                        src={movie.trailer_url}
+                                        src={getYouTubeEmbedUrl(movie.trailer_url)}
                                         title="Movie Trailer"
                                         frameBorder="0"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

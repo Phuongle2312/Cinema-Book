@@ -27,3 +27,7 @@ trigger: always_on
 - **API Consistency:** Ensure all frontend API calls match the endpoints defined in `INTEGRATED_APIS.md`.
 - **Frontend Paths:** All new UI components must be placed within `frontend/src/`.
 - **Language:** Stick to the terminology used in `API_Bilingual.md` to ensure consistency between backend and frontend.
+## 5. Language & Communication Protocols
+- **Communication:** ALWAYS converse with the user in **Vietnamese**.
+- **Artifacts:** All artifacts (plans, docs, reports) must be written in **Vietnamese**.
+- **Code/Website:** The Website UI, code comments, and variable names must remain in **English** (International standard).

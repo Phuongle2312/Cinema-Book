@@ -323,10 +323,16 @@ class BookingController extends Controller
      */
     private function validateSeatsAvailability($showtimeId, $seatIds)
     {
-        // Kiểm tra ghế đã được đặt
+        // Kiểm tra ghế đã được đặt (Confirmed) hoặc đang chờ thanh toán (Pending + Chưa hết hạn)
         $bookedSeats = BookingSeat::whereHas('booking', function ($query) use ($showtimeId) {
             $query->where('showtime_id', $showtimeId)
-                ->whereIn('status', ['confirmed', 'pending']);
+                ->where(function ($q) {
+                    $q->where('status', 'confirmed')
+                        ->orWhere(function ($sq) {
+                            $sq->where('status', 'pending')
+                                ->where('expires_at', '>', Carbon::now());
+                        });
+                });
         })->whereIn('seat_id', $seatIds)->count();
 
         if ($bookedSeats > 0) {

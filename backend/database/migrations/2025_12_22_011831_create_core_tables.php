@@ -16,6 +16,16 @@ return new class extends Migration {
         // NHÓM 1: METADATA TABLES (Thể loại, Ngôn ngữ, Diễn viên)
         // ============================================
 
+        // 0. Bảng Thành phố (Cities)
+        Schema::create('cities', function (Blueprint $table) {
+            $table->id('city_id');
+            $table->string('name')->unique();
+            $table->string('slug')->unique();
+            $table->string('country')->default('Vietnam');
+            $table->string('timezone')->default('Asia/Ho_Chi_Minh');
+            $table->timestamps();
+        });
+
         // 1. Bảng Thể loại phim (Genres)
         Schema::create('genres', function (Blueprint $table) {
             $table->id('genre_id');
@@ -49,11 +59,16 @@ return new class extends Migration {
         // 4. Bảng Rạp chiếu (Theaters)
         Schema::create('theaters', function (Blueprint $table) {
             $table->id('theater_id');
+            $table->foreignId('city_id')->constrained('cities', 'city_id')->onDelete('cascade');
             $table->string('name');
-            $table->string('city'); // Dùng để lọc theo thành phố
+            $table->string('slug')->unique();
             $table->string('address');
             $table->string('phone')->nullable();
-            $table->text('facilities')->nullable(); // JSON: ["parking", "food_court", "3D"]
+            $table->text('description')->nullable();
+            $table->string('image_url')->nullable();
+            $table->decimal('latitude', 10, 8)->nullable();
+            $table->decimal('longitude', 11, 8)->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
 

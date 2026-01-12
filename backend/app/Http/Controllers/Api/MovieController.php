@@ -41,7 +41,7 @@ class MovieController extends Controller
 
         if ($sortBy === 'rating') {
             $query->withAvg('reviews', 'rating')
-                  ->orderBy('reviews_avg_rating', $sortOrder);
+                ->orderBy('reviews_avg_rating', $sortOrder);
         } else {
             $query->orderBy($sortBy, $sortOrder);
         }
@@ -75,6 +75,16 @@ class MovieController extends Controller
             ->orderBy('reviews_avg_rating', 'desc')
             ->limit(10)
             ->get();
+
+        // Fallback: If no featured movies, get latest now_showing movies
+        if ($movies->isEmpty()) {
+            $movies = Movie::with(['genres', 'languages'])
+                ->withAvg('reviews', 'rating')
+                ->where('status', 'now_showing')
+                ->latest()
+                ->limit(10)
+                ->get();
+        }
 
         return response()->json([
             'success' => true,
@@ -203,11 +213,11 @@ class MovieController extends Controller
 
         // Lọc theo rating tối thiểu
         if ($request->filled('rating')) {
-             $query->withAvg('reviews', 'rating')
-                   ->having('reviews_avg_rating', '>=', $request->rating);
+            $query->withAvg('reviews', 'rating')
+                ->having('reviews_avg_rating', '>=', $request->rating);
         } else {
-             // Always load avg rating for sorting if not filtered
-             $query->withAvg('reviews', 'rating');
+            // Always load avg rating for sorting if not filtered
+            $query->withAvg('reviews', 'rating');
         }
 
         // Lọc theo ngày chiếu

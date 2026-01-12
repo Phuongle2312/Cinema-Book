@@ -3,6 +3,7 @@ import { Play, Heart, Info, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import './Banner.css';
 import bannerData from '../data/banner.json';
 import trailerData from '../data/trailer.json';
+import { getYouTubeEmbedUrl } from '../utils/videoUtils';
 
 const Banner = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -18,25 +19,7 @@ const Banner = () => {
 
     const currentMovie = bannerData[currentIndex];
 
-    // Helper to get YouTube ID from URL
-    const getTrailerId = (movieId) => {
-        const trailerEntry = trailerData.find(t => t.id === movieId);
-        if (!trailerEntry || !trailerEntry.trailer) return null;
-
-        try {
-            const url = new URL(trailerEntry.trailer);
-            // Handle standard youtube.com/watch?v=ID or youtu.be/ID
-            if (url.hostname === 'youtu.be') {
-                return url.pathname.slice(1);
-            }
-            return url.searchParams.get('v');
-        } catch (e) {
-            console.error("Invalid URL", e);
-            return null;
-        }
-    };
-
-    const currentTrailerId = getTrailerId(currentMovie.id);
+    const currentTrailerUrl = getYouTubeEmbedUrl(currentMovie.trailerUrl || currentMovie.trailer);
 
     useEffect(() => {
         if (showTrailer) return; // Pause auto-slide when trailer is open
@@ -45,7 +28,7 @@ const Banner = () => {
     }, [showTrailer]);
 
     const handlePlayClick = () => {
-        if (currentTrailerId) {
+        if (currentTrailerUrl) {
             setShowTrailer(true);
         } else {
             alert("Trailer not available");
@@ -130,7 +113,7 @@ const Banner = () => {
             </div>
 
             {/* Trailer Modal */}
-            {showTrailer && currentTrailerId && (
+            {showTrailer && currentTrailerUrl && (
                 <div className="trailer-modal" onClick={closeTrailer}>
                     <div className="trailer-content" onClick={(e) => e.stopPropagation()}>
                         <button className="close-trailer" onClick={closeTrailer}>
@@ -139,7 +122,7 @@ const Banner = () => {
                         <iframe
                             width="100%"
                             height="100%"
-                            src={`https://www.youtube.com/embed/${currentTrailerId}?autoplay=1`}
+                            src={`${currentTrailerUrl}?autoplay=1`}
                             title="Movie Trailer"
                             frameBorder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

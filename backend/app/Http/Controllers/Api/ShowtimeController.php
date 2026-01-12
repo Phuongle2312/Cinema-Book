@@ -5,9 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Showtime;
 use App\Models\Seat;
-use App\Models\BookingDetail;
+use App\Models\BookingSeat;
 use App\Models\SeatLock;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 /**
@@ -65,7 +66,17 @@ class ShowtimeController extends Controller
      */
     public function getSeats($id)
     {
-        $showtime = Showtime::with(['room', 'movie'])->find($id);
+        // Tự động giải phóng các ghế đã hết hạn giữ chỗ (6 phút)
+        DB::table('bookings')
+            ->where('status', 'pending')
+            ->where('expires_at', '<', Carbon::now())
+            ->update(['status' => 'expired']);
+
+        DB::table('seat_locks')
+            ->where('expires_at', '<', Carbon::now())
+            ->delete();
+
+        $showtime = Showtime::with(['room.theater', 'movie'])->find($id);
 
         if (!$showtime) {
             return response()->json([
@@ -80,11 +91,15 @@ class ShowtimeController extends Controller
             ->orderBy('number')
             ->get();
 
-        // Lấy danh sách ghế đã đặt (confirmed hoặc pending)
-        $bookedSeatIds = BookingDetail::whereHas('booking', function ($query) use ($id) {
-            $query->where('showtime_id', $id)
-                ->whereIn('status', ['confirmed', 'pending']);
-        })->pluck('seat_id')->toArray();
+        // Lấy danh sách ghế đã đặt (confirmed) hoặc đang đợi thanh toán (pending + chưa hết hạn)
+        $bookedSeatIds = BookingSeat::where('showtime_id', $id)
+            ->whereHas('booking', function ($query) {
+                $query->where('status', 'confirmed')
+                    ->orWhere(function ($q) {
+                        $q->where('status', 'pending')
+                            ->where('expires_at', '>', Carbon::now());
+                    });
+            })->pluck('seat_id')->toArray();
 
         // Lấy danh sách ghế đang bị lock (chưa hết hạn)
         $lockedSeatIds = SeatLock::where('showtime_id', $id)
@@ -104,7 +119,7 @@ class ShowtimeController extends Controller
         });
 
         // Nhóm ghế theo hàng để dễ hiển thị
-        $seatMap = $seats->groupBy('row');
+        $seatMap = $seats->groupBy('row')->sortKeys();
 
         return response()->json([
             'success' => true,
