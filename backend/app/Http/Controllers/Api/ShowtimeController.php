@@ -11,47 +11,45 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
-/**
- * ShowtimeController
- * Xử lý API liên quan đến lịch chiếu và ghế ngồi
- */
 class ShowtimeController extends Controller
 {
     /**
      * GET /api/showtimes
-     * Lấy danh sách suất chiếu theo phim, rạp hoặc ngày
      */
     public function index(Request $request)
     {
-        // Ghi log để debug params
-        \Log::info('GET /api/showtimes Params:', $request->all());
+        // Ghi log để kiểm tra params từ Web gửi lên
+        \Log::info('Showtime Request Params:', $request->all());
 
         $query = Showtime::with(['movie', 'room.theater.city']);
 
-        // 1. Lọc theo Phim
-        if ($request->has('movie_id') && $request->movie_id != null) {
+        // 1. Lọc theo Phim (nếu có)
+        if ($request->filled('movie_id')) {
             $query->where('movie_id', $request->movie_id);
         }
 
-        // 2. Lọc theo Rạp
-        if ($request->has('theater_id') && $request->theater_id != null) {
+        // 2. Lọc theo Thành phố (QUAN TRỌNG: Khớp với giao diện Web bạn đang dùng)
+        if ($request->filled('city')) {
+            $query->whereHas('room.theater.city', function ($q) use ($request) {
+                $q->where('name', 'LIKE', '%' . $request->city . '%');
+            });
+        }
+
+        // 3. Lọc theo Rạp cụ thể (nếu có)
+        if ($request->filled('theater_id')) {
             $query->whereHas('room', function ($q) use ($request) {
                 $q->where('theater_id', $request->theater_id);
             });
         }
 
-        // 3. Lọc theo Ngày
-        if ($request->has('date') && $request->date != null) {
-            // Format: YYYY-MM-DD
+        // 4. Lọc theo Ngày
+        if ($request->filled('date')) {
             $query->whereDate('start_time', $request->date);
         } else {
-            // Mặc định: Chỉ lấy các suất chiếu từ thời điểm hiện tại trở đi
-            // Nếu bạn đang test dữ liệu cũ thì có thể comment dòng này lại
-            // $query->where('start_time', '>=', Carbon::now());
+            $query->where('start_time', '>=', Carbon::now());
         }
 
-        // Sắp xếp theo thời gian
-        $showtimes = $query->orderBy('start_time')->get();
+        $showtimes = $query->orderBy('start_time', 'asc')->get();
 
         return response()->json([
             'success' => true,
@@ -62,7 +60,6 @@ class ShowtimeController extends Controller
 
     /**
      * GET /api/showtimes/{id}/seats
-     * Lấy sơ đồ ghế ngồi kèm trạng thái (available/booked/locked)
      */
     public function getSeats($id)
     {
@@ -85,7 +82,6 @@ class ShowtimeController extends Controller
             ], 404);
         }
 
-        // Lấy tất cả ghế của room
         $seats = Seat::where('room_id', $showtime->room_id)
             ->orderBy('row')
             ->orderBy('number')
@@ -101,12 +97,10 @@ class ShowtimeController extends Controller
                     });
             })->pluck('seat_id')->toArray();
 
-        // Lấy danh sách ghế đang bị lock (chưa hết hạn)
         $lockedSeatIds = SeatLock::where('showtime_id', $id)
             ->where('expires_at', '>', Carbon::now())
             ->pluck('seat_id')->toArray();
 
-        // Gán trạng thái cho từng ghế
         $seats->map(function ($seat) use ($bookedSeatIds, $lockedSeatIds) {
             if (in_array($seat->seat_id, $bookedSeatIds)) {
                 $seat->status = 'booked';
@@ -118,15 +112,12 @@ class ShowtimeController extends Controller
             return $seat;
         });
 
-        // Nhóm ghế theo hàng để dễ hiển thị
-        $seatMap = $seats->groupBy('row')->sortKeys();
-
         return response()->json([
             'success' => true,
             'data' => [
                 'showtime' => $showtime,
                 'seats' => $seats,
-                'seat_map' => $seatMap,
+                'seat_map' => $seats->groupBy('row'),
                 'summary' => [
                     'total_seats' => $seats->count(),
                     'booked_seats' => count($bookedSeatIds),

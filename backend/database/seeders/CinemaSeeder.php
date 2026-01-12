@@ -7,6 +7,8 @@ use App\Models\City;
 use App\Models\Theater;
 use App\Models\Room;
 use App\Models\Movie;
+use App\Models\Seat;
+use App\Models\Showtime;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -24,121 +26,148 @@ class CinemaSeeder extends Seeder
         DB::table('cities')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
-        $citiesData = [
-            [
-                'slug' => 'ho-chi-minh',
-                'name' => 'Hồ Chí Minh',
-                'theater_slug' => 'cgv-vincom-dong-khoi',
-                'theater_name' => 'CGV Vincom Đồng Khởi',
-                'theater_address' => '72 Lê Thánh Tôn, Quận 1',
+        // Define Cities and their Theaters (Remote version)
+        $cities = [
+            'Hồ Chí Minh' => [
+                'ho-chi-minh',
+                [
+                    ['name' => 'CGV Vincom Đồng Khởi', 'address' => '72 Lê Thánh Tôn, Q.1'],
+                    ['name' => 'CGV Sư Vạn Hạnh', 'address' => 'Vạn Hạnh Mall, Q.10'],
+                    ['name' => 'Galaxy Nguyễn Du', 'address' => '116 Nguyễn Du, Q.1']
+                ]
             ],
-            [
-                'slug' => 'ha-noi',
-                'name' => 'Hà Nội',
-                'theater_slug' => 'cgv-vincom-nguyen-chi-thanh',
-                'theater_name' => 'CGV Vincom Nguyễn Chí Thanh',
-                'theater_address' => '54A Nguyễn Chí Thanh, Quận Đống Đa',
+            'Hà Nội' => [
+                'ha-noi',
+                [
+                    ['name' => 'CGV Vincom Bà Triệu', 'address' => '191 Bà Triệu'],
+                    ['name' => 'Lotte Cinema Landmark', 'address' => 'Keangnam Tower'],
+                    ['name' => 'BHD Star Discovery', 'address' => '302 Cầu Giấy']
+                ]
             ],
-            [
-                'slug' => 'da-nang',
-                'name' => 'Đà Nẵng',
-                'theater_slug' => 'cgv-vincom-da-nang',
-                'theater_name' => 'CGV Vincom Đà Nẵng',
-                'theater_address' => 'Ngô Quyền, Sơn Trà',
+            'Đà Nẵng' => [
+                'da-nang',
+                [
+                    ['name' => 'CGV Vĩnh Trung Plaza', 'address' => '255 Hùng Vương'],
+                    ['name' => 'Lotte Cinema Đà Nẵng', 'address' => 'Tầng 5 Lotte Mart']
+                ]
             ],
+            'Cần Thơ' => ['can-tho', [['name' => 'CGV Sense City', 'address' => '1 Đại Lộ Hòa Bình']]],
+            'Đồng Nai' => ['dong-nai', [['name' => 'CGV BigC Đồng Nai', 'address' => 'Xa Lộ Hà Nội, Biên Hòa']]],
+            'Hải Phòng' => ['hai-phong', [['name' => 'CGV AEON Mall', 'address' => 'Lê Chân, Hải Phòng']]],
+            'Quảng Ninh' => ['quang-ninh', [['name' => 'CGV Vincom Hạ Long', 'address' => 'Khu Cột Đồng Hồ, Hạ Long']]],
         ];
 
         $movies = Movie::all();
-        echo "Found " . $movies->count() . " movies." . PHP_EOL;
 
-        foreach ($citiesData as $c) {
-            $cityId = DB::table('cities')->insertGetId([
-                'name' => $c['name'],
-                'slug' => $c['slug'],
-                'country' => 'Vietnam',
-                'timezone' => 'Asia/Ho_Chi_Minh',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        foreach ($cities as $cityName => $data) {
+            $slug = $data[0];
+            $theatersList = $data[1];
 
-            $theaterId = DB::table('theaters')->insertGetId([
-                'city_id' => $cityId,
-                'name' => $c['theater_name'],
-                'slug' => $c['theater_slug'],
-                'address' => $c['theater_address'],
-                'phone' => '1900 6017',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            // 1. Create City
+            $city = City::firstOrCreate(
+                ['slug' => $slug],
+                ['name' => $cityName, 'country' => 'Vietnam', 'timezone' => 'Asia/Ho_Chi_Minh']
+            );
 
-            for ($r = 1; $r <= 2; $r++) {
-                $roomId = DB::table('rooms')->insertGetId([
-                    'theater_id' => $theaterId,
-                    'name' => "Room $r - " . $c['slug'],
-                    'total_seats' => 50,
-                    'screen_type' => ($r == 1 ? 'standard' : 'vip'),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+            foreach ($theatersList as $theaterData) {
+                // 2. Create Theater
+                $theater = Theater::firstOrCreate(
+                    ['slug' => Str::slug($theaterData['name'])],
+                    [
+                        'city_id' => $city->city_id,
+                        'name' => $theaterData['name'],
+                        'address' => $theaterData['address'],
+                        'phone' => '1900 6017',
+                        'description' => 'Rạp chiếu phim tiêu chuẩn quốc tế.',
+                        'is_active' => true,
+                    ]
+                );
 
-                // Seats
-                $seats = [];
-                $rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-                foreach ($rows as $row) {
-                    $colsInRow = 10;
-                    for ($col = 1; $col <= $colsInRow; $col++) {
-                        $type = 'standard';
-                        // $extra = 0; // Column removed
+                // 3. Create Rooms (2 rooms per theater)
+                $roomTypes = [
+                    ['name' => 'Room 1 (IMAX)', 'type' => 'IMAX'],
+                    ['name' => 'Room 2 (Standard)', 'type' => 'standard']
+                ];
 
-                        if (in_array($row, ['D', 'E', 'F', 'G'])) {
-                            $type = 'vip';
-                            // $extra = 20000;
-                        } elseif ($row === 'H') {
-                            $type = 'couple';
-                            // $extra = 50000;
-                        }
+                foreach ($roomTypes as $rType) {
+                    $room = Room::firstOrCreate(
+                        ['name' => $rType['name'], 'theater_id' => $theater->theater_id],
+                        [
+                            'total_seats' => 80, // Increased to accommodate more rows
+                            'screen_type' => $rType['type'],
+                        ]
+                    );
 
-                        $seats[] = [
-                            'room_id' => $roomId,
-                            'row' => $row,
-                            'number' => $col,
-                            'seat_code' => $row . $col,
-                            'type' => $type, // Keeping original column if exists
-                            'seat_type' => $type, // New column
-                            // 'extra_price' => $extra, // Removed
-                            'is_available' => true,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ];
-                    }
-                }
-                DB::table('seats')->insert($seats);
+                    // 4. Create Seats (My local version logic)
+                    $this->createSeatsForRoom($room);
 
-                // Showtimes
-                $timeSlots = ['09:00', '12:00', '15:00', '18:00', '21:00'];
-                foreach ($movies as $mIdx => $movie) {
-                    if (($r == 1 && $mIdx < 3) || ($r == 2 && $mIdx >= 3)) {
-                        for ($day = 0; $day < 7; $day++) {
-                            $date = Carbon::today()->addDays($day)->format('Y-m-d');
-                            $slots = ($mIdx % 3 == 0) ? [0, 3] : (($mIdx % 3 == 1) ? [1, 4] : [2]);
-
-                            foreach ($slots as $sIdx) {
-                                DB::table('showtimes')->insert([
-                                    'movie_id' => $movie->movie_id,
-                                    'room_id' => $roomId,
-                                    'start_time' => $date . ' ' . $timeSlots[$sIdx],
-                                    'base_price' => ($r == 1 ? 80000 : 110000),
-                                    'status' => 'scheduled',
-                                    'created_at' => now(),
-                                    'updated_at' => now(),
-                                ]);
-                            }
-                        }
+                    // 5. Create Showtimes (14 days)
+                    if ($movies->count() > 0) {
+                        $this->createShowtimesForRoom($room, $movies);
                     }
                 }
             }
-            echo "Finished City: " . $c['name'] . PHP_EOL;
+            echo "Finished City: " . $cityName . PHP_EOL;
+        }
+    }
+
+    private function createSeatsForRoom($room)
+    {
+        if (Seat::where('room_id', $room->room_id)->exists())
+            return;
+
+        $seats = [];
+        $rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        foreach ($rows as $row) {
+            $colsInRow = 10;
+            for ($col = 1; $col <= $colsInRow; $col++) {
+                $type = 'standard';
+
+                if (in_array($row, ['D', 'E', 'F', 'G'])) {
+                    $type = 'vip';
+                } elseif ($row === 'H') {
+                    $type = 'couple';
+                }
+
+                $seats[] = [
+                    'room_id' => $room->room_id,
+                    'row' => $row,
+                    'number' => $col,
+                    'seat_code' => $row . $col,
+                    'type' => $type,
+                    'seat_type' => $type,
+                    'is_available' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
+        DB::table('seats')->insert($seats);
+    }
+
+    private function createShowtimesForRoom($room, $movies)
+    {
+        for ($i = 0; $i < 7; $i++) {
+            $date = Carbon::today()->addDays($i);
+            $slots = ['10:00', '13:00', '16:00', '19:00', '22:00'];
+
+            foreach ($slots as $idx => $time) {
+                $movie = $movies[$idx % $movies->count()];
+
+                Showtime::firstOrCreate(
+                    [
+                        'movie_id' => $movie->movie_id,
+                        'room_id' => $room->room_id,
+                        'start_time' => $date->format('Y-m-d') . ' ' . $time . ':00',
+                    ],
+                    [
+                        'base_price' => ($room->screen_type === 'IMAX' ? 120000 : 80000),
+                        'status' => 'scheduled',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]
+                );
+            }
         }
     }
 }

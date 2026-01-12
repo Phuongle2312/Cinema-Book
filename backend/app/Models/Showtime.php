@@ -23,6 +23,8 @@ class Showtime extends Model
         'status',
     ];
 
+    protected $appends = ['format'];
+
     protected $casts = [
         'start_time' => 'datetime',
         'base_price' => 'decimal:0',
@@ -81,4 +83,59 @@ class Showtime extends Model
     {
         return $query->where('start_time', '>', Carbon::now());
     }
+<<<<<<< HEAD
+=======
+
+    /**
+     * Helper Methods
+     */
+
+    // Kiểm tra còn ghế trống không
+    public function hasAvailableSeats(): bool
+    {
+        return $this->available_seats > 0;
+    }
+
+    // Lấy danh sách ghế đã đặt
+    public function getBookedSeats()
+    {
+        return BookingDetail::whereHas('booking', function ($query) {
+            $query->where('showtime_id', $this->showtime_id)
+                  ->whereIn('status', ['pending', 'confirmed']);
+        })->pluck('seat_id');
+    }
+
+    // Lấy danh sách ghế đang bị lock
+    public function getLockedSeats()
+    {
+        return $this->seatLocks()
+            ->where('expires_at', '>', Carbon::now())
+            ->pluck('seat_id');
+    }
+
+    // Accessor: Format (2D/3D + Language) cho Frontend
+    public function getFormatAttribute()
+    {
+        // Logic: Lấy Type của Room + Language dựa trên ID
+        // Chẵn = Phụ Đề Anh, Lẻ = Phụ Đề Việt (giả lập để có dữ liệu 2 tab)
+        
+        $type = '2D';
+        if ($this->room && !empty($this->room->screen_type)) {
+            $rawType = $this->room->screen_type;
+            if ($rawType === 'standard') {
+                $type = '2D';
+            } elseif ($rawType === 'imax') {
+                $type = 'IMAX';
+            } else {
+                $type = ucfirst($rawType);
+            }
+        }
+        
+        // Return format string matches Frontend hardcoded tabs
+        // "2D Phụ Đề Anh", "2D Phụ Đề Việt"
+        $lang = ($this->showtime_id % 2 == 0) ? "Phụ Đề Anh" : "Phụ Đề Việt";
+        
+        return "$type $lang"; 
+    }
+>>>>>>> 03a35ef62f87d2cc3fb315cc6d3057971e79ba96
 }

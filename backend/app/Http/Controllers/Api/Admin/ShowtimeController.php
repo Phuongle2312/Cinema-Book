@@ -11,6 +11,7 @@ use App\Models\Seat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 /**
  * Admin Controller: ShowtimeController
@@ -88,18 +89,46 @@ class ShowtimeController extends Controller
             ], 400);
         }
 
-        // Kiểm tra xem có suất chiếu trùng giờ không
-        $conflictShowtime = Showtime::where('room_id', $request->room_id)
-            ->where('show_date', $request->show_date)
-            ->where('show_time', $request->show_time)
-            ->exists();
-
-        if ($conflictShowtime) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Đã có suất chiếu khác trong phòng này vào thời gian này'
-            ], 400);
+        // --- LOGIC KIỂM TRA TRÙNG LỊCH (CONFLICT CHECK) ---
+        
+        // 1. Lấy thông tin phim để biết thời lượng
+        $movie = Movie::find($request->movie_id);
+        if (!$movie) {
+             return response()->json(['success' => false, 'message' => 'Phim không tồn tại'], 404);
         }
+
+        $cleaningTime = 15; // Thời gian dọn dẹp giữa các suất : 15 phút
+
+        // 2. Tính thời gian Bắt đầu và Kết thúc của suất chiếu MỚI dự kiến
+        // Format: YYYY-MM-DD HH:mm:ss
+        $newStart = Carbon::parse($request->show_date . ' ' . $request->show_time);
+        $newEnd = $newStart->copy()->addMinutes($movie->duration + $cleaningTime);
+
+        // 3. Lấy tất cả suất chiếu CŨ trong cùng Phòng và cùng Ngày
+        $existingShowtimes = Showtime::with('movie')
+            ->where('room_id', $request->room_id)
+            ->whereDate('show_date', $request->show_date)
+            ->get();
+
+        // 4. Duyệt qua từng suất cũ để so sánh
+        foreach ($existingShowtimes as $existing) {
+            // Tính thời gian của suất cũ
+            // Dùng start_time có sẵn trong DB hoặc parse lại từ show_date/time cho chắc chắn
+            $existingStart = Carbon::parse($existing->show_date->format('Y-m-d') . ' ' . $existing->show_time);
+            
+            // Thời lượng phim cũ + dọn dẹp
+            $duration = $existing->movie ? $existing->movie->duration : 0;
+            $existingEnd = $existingStart->copy()->addMinutes($duration + $cleaningTime);
+
+            // Công thức kiểm tra giao nhau (Overlap): (StartA < EndB) && (EndA > StartB)
+            if ($newStart->lt($existingEnd) && $newEnd->gt($existingStart)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Phòng chiếu bị trùng lịch! Phòng bận từ " . $existingStart->format('H:i') . " đến " . $existingEnd->format('H:i') . " (Gồm dọn dẹp)."
+                ], 400);
+            }
+        }
+        // --- KẾT THÚC KIỂM TRA ---
 
         DB::beginTransaction();
         try {
