@@ -88,7 +88,7 @@ class Booking extends Model
     // Booking có nhiều booking details (chi tiết)
     public function bookingDetails()
     {
-        return $this->hasMany(BookingSeat::class, 'booking_id', 'booking_id');
+        return $this->hasMany(BookingDetail::class, 'booking_id', 'booking_id');
     }
 
     // Booking có một transaction

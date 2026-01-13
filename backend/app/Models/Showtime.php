@@ -99,7 +99,7 @@ class Showtime extends Model
     // Lấy danh sách ghế đã đặt
     public function getBookedSeats()
     {
-        return BookingSeat::whereHas('booking', function ($query) {
+        return BookingDetail::whereHas('booking', function ($query) {
             $query->where('showtime_id', $this->showtime_id)
                 ->whereIn('status', ['pending', 'confirmed']);
         })->pluck('seat_id');

@@ -148,19 +148,19 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
     
     // CRUD Theaters
-    Route::apiResource('theaters', \App\Http\Controllers\Api\Admin\TheaterController::class);
+    Route::apiResource('theaters', \App\Http\Controllers\Api\Admin\TheaterController::class)->except(['destroy']);
     
     // CRUD Movies
-    Route::apiResource('movies', \App\Http\Controllers\Api\Admin\MovieController::class);
+    Route::apiResource('movies', \App\Http\Controllers\Api\Admin\MovieController::class)->except(['destroy']);
     
     // CRUD Showtimes
-    Route::apiResource('showtimes', \App\Http\Controllers\Api\Admin\ShowtimeController::class);
+    Route::apiResource('showtimes', \App\Http\Controllers\Api\Admin\ShowtimeController::class)->except(['destroy']);
     
     // Review Moderation
     Route::prefix('reviews')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\Admin\ReviewController::class, 'index']);
         Route::put('/{id}/approve', [\App\Http\Controllers\Api\Admin\ReviewController::class, 'approve']);
         Route::put('/{id}/reject', [\App\Http\Controllers\Api\Admin\ReviewController::class, 'reject']);
-        Route::delete('/{id}', [\App\Http\Controllers\Api\Admin\ReviewController::class, 'destroy']);
+        // Route::delete('/{id}', [\App\Http\Controllers\Api\Admin\ReviewController::class, 'destroy']); // Disabled
     });
 });

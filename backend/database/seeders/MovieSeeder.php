@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Movie;
-use App\Models\Genre;
+use App\Models\Hashtag;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -58,23 +58,23 @@ class MovieSeeder extends Seeder
                     'banner_url' => $item['bannerImage'] ?? ($item['image'] ?? null),
                     'trailer_url' => $item['trailer'] ?? null,
                     'status' => 'now_showing',
-                    'is_featured' => true, // Mark all as featured for now to fill the section
+                    'base_price' => 190000, // Thêm giá mặc định
                 ]
             );
 
-            // Handle Genres
+            // Handle Genres as Hashtags
             if (isset($item['genres'])) {
-                $genreIds = [];
+                $hashtagIds = [];
                 foreach ($item['genres'] as $genreName) {
                     if ($genreName === 'In Theaters')
                         continue; // Skip non-genre tags
-                    $genre = Genre::firstOrCreate(
+                    $hashtag = Hashtag::firstOrCreate(
                         ['name' => $genreName],
-                        ['slug' => Str::slug($genreName)]
+                        ['type' => 'genre']
                     );
-                    $genreIds[] = $genre->genre_id;
+                    $hashtagIds[] = $hashtag->hashtag_id;
                 }
-                $movie->genres()->sync($genreIds);
+                $movie->hashtags()->sync($hashtagIds);
             }
         }
     }

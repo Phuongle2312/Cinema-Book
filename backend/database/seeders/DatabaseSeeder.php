@@ -24,9 +24,9 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             MovieSeeder::class,
-            BannerSeeder::class,
+            // BannerSeeder::class,
             CinemaSeeder::class,
-            ComboSeeder::class,
+            // ComboSeeder::class,
         ]);
     }
 }

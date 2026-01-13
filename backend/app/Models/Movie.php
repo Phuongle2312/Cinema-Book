@@ -29,6 +29,7 @@ class Movie extends Model
         'trailer_url',
         'status',
         'is_featured',
+        'base_price',
     ];
 
     protected $casts = [
@@ -54,42 +55,24 @@ class Movie extends Model
      * Relationships
      */
 
-    // Một phim thuộc nhiều thể loại (many-to-many)
+    // Quan hệ Hashtags chung
+    public function hashtags()
+    {
+        return $this->belongsToMany(Hashtag::class, 'movie_hashtag', 'movie_id', 'hashtag_id')
+            ->withPivot('pivot_type')
+            ->withTimestamps();
+    }
+
+    // Lọc hashtags là Thể loại
     public function genres()
     {
-        return $this->belongsToMany(Genre::class, 'movie_genre', 'movie_id', 'genre_id');
+        return $this->hashtags()->where('type', 'genre');
     }
 
-    // Một phim có nhiều ngôn ngữ (many-to-many)
+    // Lọc hashtags là Ngôn ngữ
     public function languages()
     {
-        return $this->belongsToMany(Language::class, 'movie_language', 'movie_id', 'language_id')
-            ->withPivot('type'); // subtitle hoặc dubbing
-    }
-
-    // Một phim có nhiều diễn viên/đạo diễn (many-to-many)
-    public function cast()
-    {
-        return $this->belongsToMany(Cast::class, 'movie_cast', 'movie_id', 'cast_id')
-            ->withPivot('role', 'character_name');
-    }
-
-    // Lấy chỉ diễn viên
-    public function actors()
-    {
-        return $this->belongsToMany(Cast::class, 'movie_cast', 'movie_id', 'cast_id')
-            ->wherePivot('role', 'actor')
-            ->withPivot('character_name', 'order')
-            ->orderBy('order');
-    }
-
-    // Lấy chỉ đạo diễn
-    public function directors()
-    {
-        return $this->belongsToMany(Cast::class, 'movie_cast', 'movie_id', 'cast_id')
-            ->wherePivot('role', 'director')
-            ->withPivot('order')
-            ->orderBy('order');
+        return $this->hashtags()->where('type', 'language');
     }
 
     // Một phim có nhiều suất chiếu
@@ -126,30 +109,25 @@ class Movie extends Model
         return $query->where('is_featured', true);
     }
 
-    // Tìm kiếm phim theo title, actor, director
+    // Tìm kiếm phim theo title
     public function scopeSearch($query, $searchTerm)
     {
-        return $query->where(function ($q) use ($searchTerm) {
-            $q->where('title', 'like', "%{$searchTerm}%")
-                ->orWhereHas('cast', function ($castQuery) use ($searchTerm) {
-                    $castQuery->where('name', 'like', "%{$searchTerm}%");
-                });
-        });
+        return $query->where('title', 'like', "%{$searchTerm}%");
     }
 
-    // Lọc theo thể loại
+    // Lọc theo thể loại (Hashtag type=genre)
     public function scopeByGenre($query, $genreId)
     {
-        return $query->whereHas('genres', function ($q) use ($genreId) {
-            $q->where('genres.genre_id', $genreId);
+        return $query->whereHas('hashtags', function ($q) use ($genreId) {
+            $q->where('hashtags.hashtag_id', $genreId)->where('type', 'genre');
         });
     }
 
-    // Lọc theo ngôn ngữ
+    // Lọc theo ngôn ngữ (Hashtag type=language)
     public function scopeByLanguage($query, $languageId)
     {
-        return $query->whereHas('languages', function ($q) use ($languageId) {
-            $q->where('languages.language_id', $languageId);
+        return $query->whereHas('hashtags', function ($q) use ($languageId) {
+            $q->where('hashtags.hashtag_id', $languageId)->where('type', 'language');
         });
     }
 

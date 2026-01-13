@@ -113,8 +113,11 @@ class CinemaSeeder extends Seeder
 
     private function createSeatsForRoom($room)
     {
-        if (Seat::where('room_id', $room->room_id)->exists())
+        if (Seat::where('room_id', $room->room_id)->exists()) {
+            echo "Skipping Room " . $room->room_id . " (Seats exist)\n";
             return;
+        }
+        echo "Creating seats for Room " . $room->room_id . "\n";
 
         $seats = [];
         $rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
@@ -134,15 +137,24 @@ class CinemaSeeder extends Seeder
                     'row' => $row,
                     'number' => $col,
                     'seat_code' => $row . $col,
-                    'type' => $type,
                     'seat_type' => $type,
+                    // 'type' => $type, 
                     'is_available' => true,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
             }
         }
-        DB::table('seats')->insert($seats);
+        try {
+            DB::table('seats')->insert($seats);
+        } catch (\Exception $e) {
+            echo "SEEDER ERROR: " . $e->getMessage();
+            die();
+        }
+        // DEBUG: Try inserting one by one to see error
+        // foreach ($seats as $seat) {
+        //      DB::table('seats')->insert($seat);
+        // }
     }
 
     private function createShowtimesForRoom($room, $movies)

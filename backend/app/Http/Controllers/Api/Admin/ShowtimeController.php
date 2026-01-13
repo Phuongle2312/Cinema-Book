@@ -210,28 +210,9 @@ class ShowtimeController extends Controller
      */
     public function destroy($id)
     {
-        $showtime = Showtime::find($id);
-
-        if (!$showtime) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Suất chiếu không tồn tại'
-            ], 404);
-        }
-
-        // Kiểm tra xem có booking nào không
-        if ($showtime->bookings()->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Không thể xóa suất chiếu đã có người đặt vé'
-            ], 400);
-        }
-
-        $showtime->delete();
-
         return response()->json([
-            'success' => true,
-            'message' => 'Suất chiếu đã được xóa'
-        ]);
+            'success' => false,
+            'message' => 'Feature is being updated'
+        ], 403);
     }
 }

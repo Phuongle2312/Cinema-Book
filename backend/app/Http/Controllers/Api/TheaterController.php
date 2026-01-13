@@ -18,11 +18,11 @@ class TheaterController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Theater::query();
+        $query = Theater::with(['city']);
 
-        // Lọc theo thành phố
-        if ($request->has('city')) {
-            $query->where('city', $request->city);
+        // Filter by city_id if provided
+        if ($request->has('city_id')) {
+            $query->where('city_id', $request->city_id);
         }
 
         // Lấy danh sách rạp với số lượng rooms

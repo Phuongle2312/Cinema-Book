@@ -108,20 +108,9 @@ class ReviewController extends Controller
      */
     public function destroy($id)
     {
-        $review = Review::find($id);
-
-        if (!$review) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Đánh giá không tồn tại'
-            ], 404);
-        }
-
-        $review->delete();
-
         return response()->json([
-            'success' => true,
-            'message' => 'Đánh giá đã được xóa'
-        ]);
+            'success' => false,
+            'message' => 'Feature is being updated'
+        ], 403);
     }
 }

@@ -3,18 +3,16 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 return new class extends Migration
 {
     /**
      * Run the migrations.
-     * Tạo bảng cities và migrate dữ liệu từ theaters.city
      */
     public function up(): void
     {
-        // Skipped (Already in create_core_tables)
+        Schema::dropIfExists('movie_cast');
+        Schema::dropIfExists('casts');
     }
 
     /**
@@ -22,6 +20,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Skipped
+        // Không thể rollback vì data bị mất
     }
 };

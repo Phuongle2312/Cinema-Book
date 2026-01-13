@@ -4,8 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Movie;
-use App\Models\Genre;
-use App\Models\Language;
+use App\Models\Hashtag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -21,7 +20,7 @@ class MovieController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Movie::with(['genres', 'languages']);
+        $query = Movie::with(['hashtags']);
 
         // Lọc theo trạng thái (now_showing, coming_soon, ended)
         if ($request->filled('status')) {
@@ -68,9 +67,9 @@ class MovieController extends Controller
      */
     public function featured()
     {
-        $movies = Movie::with(['genres', 'languages'])
+        $movies = Movie::with(['hashtags'])
             ->withAvg('reviews', 'rating')
-            ->where('is_featured', true)
+            // ->where('is_featured', true) // Column missing
             ->whereIn('status', ['now_showing', 'coming_soon'])
             ->orderBy('reviews_avg_rating', 'desc')
             ->limit(10)
@@ -78,7 +77,7 @@ class MovieController extends Controller
 
         // Fallback: If no featured movies, get latest now_showing movies
         if ($movies->isEmpty()) {
-            $movies = Movie::with(['genres', 'languages'])
+            $movies = Movie::with(['hashtags'])
                 ->withAvg('reviews', 'rating')
                 ->where('status', 'now_showing')
                 ->latest()
@@ -99,9 +98,7 @@ class MovieController extends Controller
     public function show($id)
     {
         $movie = Movie::with([
-            'genres',
-            'languages',
-            'cast',
+            'hashtags',
             'showtimes' => function ($query) {
                 $query->where('start_time', '>=', now())
                     ->with('room.theater')
@@ -144,14 +141,11 @@ class MovieController extends Controller
 
         $query = $request->get('q');
 
-        $movies = Movie::with(['genres', 'languages'])
+        $movies = Movie::with(['hashtags'])
             ->withAvg('reviews', 'rating')
             ->where(function ($q) use ($query) {
                 $q->where('title', 'LIKE', "%{$query}%")
-                    ->orWhere('description', 'LIKE', "%{$query}%")
-                    ->orWhereHas('cast', function ($castQuery) use ($query) {
-                        $castQuery->where('name', 'LIKE', "%{$query}%");
-                    });
+                    ->orWhere('description', 'LIKE', "%{$query}%");
             })
             ->orderBy('reviews_avg_rating', 'desc')
             ->paginate(12);
@@ -176,14 +170,13 @@ class MovieController extends Controller
     {
         $request->validate([
             'city' => 'nullable|string',
-            'genre_id' => 'nullable|exists:genres,genre_id',
-            'language_id' => 'nullable|exists:languages,language_id',
+            'hashtag_id' => 'nullable|exists:hashtags,hashtag_id',
             'rating' => 'nullable|numeric|min:0|max:10',
             'date' => 'nullable|date',
             'status' => 'nullable|in:coming_soon,now_showing,ended'
         ]);
 
-        $query = Movie::with(['genres', 'languages']);
+        $query = Movie::with(['hashtags']);
 
         // Lọc theo thành phố
         if ($request->filled('city')) {
@@ -192,22 +185,14 @@ class MovieController extends Controller
             });
         }
 
-        // Lọc theo thể loại (ID hoặc Name/Slug)
-        if ($request->filled('genre_id')) {
-            $query->whereHas('genres', function ($q) use ($request) {
-                $q->where('genres.genre_id', $request->genre_id);
+        // Lọc theo hashtag (Thể loại/Ngôn ngữ)
+        if ($request->filled('hashtag_id')) {
+            $query->whereHas('hashtags', function ($q) use ($request) {
+                $q->where('hashtags.hashtag_id', $request->hashtag_id);
             });
-        } elseif ($request->filled('genre')) {
-            $query->whereHas('genres', function ($q) use ($request) {
-                $q->where('name', 'like', "%{$request->genre}%")
-                    ->orWhere('slug', 'like', "%{$request->genre}%");
-            });
-        }
-
-        // Lọc theo ngôn ngữ
-        if ($request->filled('language_id')) {
-            $query->whereHas('languages', function ($q) use ($request) {
-                $q->where('language_id', $request->language_id);
+        } elseif ($request->filled('hashtag')) {
+            $query->whereHas('hashtags', function ($q) use ($request) {
+                $q->where('name', 'like', "%{$request->hashtag}%");
             });
         }
 

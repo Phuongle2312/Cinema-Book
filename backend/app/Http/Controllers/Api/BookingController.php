@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\BookingSeat;
+use App\Models\BookingDetail;
 use App\Models\BookingCombo;
 use App\Models\Showtime;
 use App\Models\Seat;
@@ -58,8 +58,8 @@ class BookingController extends Controller
                 'expires_at' => Carbon::now()->addMinutes(6),
             ]);
 
-            // 3. Tạo booking seats và tính tổng tiền ghế
-            $seatsTotal = $this->createBookingSeats($booking, $seatIds, $showtime);
+            // 3. Tạo chi tiết đặt vé và tính tổng tiền ghế
+            $seatsTotal = $this->createBookingDetails($booking, $seatIds, $showtime);
 
             // 4. Tạo seat locks (khóa ghế trong 6 phút)
             $this->createSeatLocks($user->id, $seatIds, $showtime->showtime_id);
@@ -324,7 +324,7 @@ class BookingController extends Controller
     private function validateSeatsAvailability($showtimeId, $seatIds)
     {
         // Kiểm tra ghế đã được đặt (Confirmed) hoặc đang chờ thanh toán (Pending + Chưa hết hạn)
-        $bookedSeats = BookingSeat::whereHas('booking', function ($query) use ($showtimeId) {
+        $bookedSeats = BookingDetail::whereHas('booking', function ($query) use ($showtimeId) {
             $query->where('showtime_id', $showtimeId)
                 ->where(function ($q) {
                     $q->where('status', 'confirmed')
@@ -351,24 +351,29 @@ class BookingController extends Controller
     }
 
     /**
-     * Tạo booking seats
+     * Tạo chi tiết đặt vé (BookingDetail)
      */
-    private function createBookingSeats($booking, $seatIds, $showtime)
+    private function createBookingDetails($booking, $seatIds, $showtime)
     {
         $total = 0;
+        $moviePrice = $showtime->movie->base_price ?? 0; // Lấy giá gốc từ phim
         $seats = Seat::whereIn('seat_id', $seatIds)->get();
 
         foreach ($seats as $seat) {
-            $price = $showtime->base_price + $seat->extra_price;
+            // Phụ thu ghế (VIP, Couple, v.v.)
+            $seatSurcharge = $seat->extra_price ?? 0;
 
-            BookingSeat::create([
+            // Công thức: Giá phim + Phụ thu ghế
+            $ticketPrice = $moviePrice + $seatSurcharge;
+
+            BookingDetail::create([
                 'booking_id' => $booking->booking_id,
                 'seat_id' => $seat->seat_id,
                 'showtime_id' => $showtime->showtime_id,
-                'price' => $price,
+                'price' => $ticketPrice,
             ]);
 
-            $total += $price;
+            $total += $ticketPrice;
         }
 
         return $total;

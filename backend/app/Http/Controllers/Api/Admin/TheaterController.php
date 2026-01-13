@@ -115,28 +115,9 @@ class TheaterController extends Controller
      */
     public function destroy($id)
     {
-        $theater = Theater::find($id);
-
-        if (!$theater) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Rạp không tồn tại'
-            ], 404);
-        }
-
-        // Kiểm tra xem rạp có suất chiếu nào không
-        if ($theater->showtimes()->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Không thể xóa rạp đang có suất chiếu'
-            ], 400);
-        }
-
-        $theater->delete();
-
         return response()->json([
-            'success' => true,
-            'message' => 'Rạp chiếu đã được xóa'
-        ]);
+            'success' => false,
+            'message' => 'Feature is being updated'
+        ], 403);
     }
 }

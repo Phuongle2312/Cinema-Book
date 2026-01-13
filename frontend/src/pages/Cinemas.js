@@ -31,7 +31,7 @@ const Cinemas = () => {
     }, []);
 
     // Filter theaters by city
-    const filteredTheaters = theaters.filter(theater => theater.city === selectedCity);
+    const filteredTheaters = theaters.filter(theater => theater.city?.name === selectedCity);
 
     return (
         <div className="cinemas-page">

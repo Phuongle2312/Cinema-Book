@@ -4,9 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Movie;
-use App\Models\Genre;
-use App\Models\Language;
-use App\Models\Cast;
+use App\Models\Hashtag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
@@ -23,7 +21,7 @@ class MovieController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Movie::with(['genres', 'languages', 'cast']);
+        $query = Movie::with(['hashtags']);
 
         // Search
         if ($request->has('search')) {
@@ -58,10 +56,8 @@ class MovieController extends Controller
             'poster_url' => 'nullable|url',
             'trailer_url' => 'nullable|url',
             'rating' => 'nullable|numeric|min:0|max:10',
-            'genre_ids' => 'nullable|array',
-            'genre_ids.*' => 'exists:genres,id',
-            'language_ids' => 'nullable|array',
-            'language_ids.*' => 'exists:languages,id',
+            'hashtag_ids' => 'nullable|array',
+            'hashtag_ids.*' => 'exists:hashtags,hashtag_id',
         ]);
 
         if ($validator->fails()) {
@@ -71,18 +67,14 @@ class MovieController extends Controller
             ], 422);
         }
 
-        $movie = Movie::create($request->except(['genre_ids', 'language_ids']));
+        $movie = Movie::create($request->except(['hashtag_ids']));
 
         // Attach relationships
-        if ($request->has('genre_ids')) {
-            $movie->genres()->attach($request->genre_ids);
+        if ($request->has('hashtag_ids')) {
+            $movie->hashtags()->attach($request->hashtag_ids);
         }
 
-        if ($request->has('language_ids')) {
-            $movie->languages()->attach($request->language_ids);
-        }
-
-        $movie->load(['genres', 'languages']);
+        $movie->load(['hashtags']);
 
         return response()->json([
             'success' => true,
@@ -115,10 +107,8 @@ class MovieController extends Controller
             'poster_url' => 'nullable|url',
             'trailer_url' => 'nullable|url',
             'rating' => 'nullable|numeric|min:0|max:10',
-            'genre_ids' => 'nullable|array',
-            'genre_ids.*' => 'exists:genres,id',
-            'language_ids' => 'nullable|array',
-            'language_ids.*' => 'exists:languages,id',
+            'hashtag_ids' => 'nullable|array',
+            'hashtag_ids.*' => 'exists:hashtags,hashtag_id',
         ]);
 
         if ($validator->fails()) {
@@ -128,18 +118,14 @@ class MovieController extends Controller
             ], 422);
         }
 
-        $movie->update($request->except(['genre_ids', 'language_ids']));
+        $movie->update($request->except(['hashtag_ids']));
 
         // Sync relationships
-        if ($request->has('genre_ids')) {
-            $movie->genres()->sync($request->genre_ids);
+        if ($request->has('hashtag_ids')) {
+            $movie->hashtags()->sync($request->hashtag_ids);
         }
 
-        if ($request->has('language_ids')) {
-            $movie->languages()->sync($request->language_ids);
-        }
-
-        $movie->load(['genres', 'languages']);
+        $movie->load(['hashtags']);
 
         return response()->json([
             'success' => true,
@@ -154,28 +140,9 @@ class MovieController extends Controller
      */
     public function destroy($id)
     {
-        $movie = Movie::find($id);
-
-        if (!$movie) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Phim không tồn tại'
-            ], 404);
-        }
-
-        // Kiểm tra xem phim có suất chiếu nào không
-        if ($movie->showtimes()->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Không thể xóa phim đang có suất chiếu. Hãy đổi status thành "ended" thay vì xóa.'
-            ], 400);
-        }
-
-        $movie->delete();
-
         return response()->json([
-            'success' => true,
-            'message' => 'Phim đã được xóa'
-        ]);
+            'success' => false,
+            'message' => 'Feature is being updated'
+        ], 403);
     }
 }
