@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -14,13 +14,13 @@ return new class extends Migration
     public function up(): void
     {
         // Use raw SQL with IF NOT EXISTS to avoid duplicate index errors
-        
+
         // 1. Indexes cho bảng movies
         DB::statement('CREATE INDEX IF NOT EXISTS movies_status_index ON movies(status)');
         DB::statement('CREATE INDEX IF NOT EXISTS movies_release_date_index ON movies(release_date)');
         DB::statement('CREATE INDEX IF NOT EXISTS movies_status_release_date_index ON movies(status, release_date)');
 
-        // 2. Indexes cho bảng showtimes  
+        // 2. Indexes cho bảng showtimes
         DB::statement('CREATE INDEX IF NOT EXISTS showtimes_start_time_index ON showtimes(start_time)');
         DB::statement('CREATE INDEX IF NOT EXISTS showtimes_status_index ON showtimes(status)');
         DB::statement('CREATE INDEX IF NOT EXISTS showtimes_movie_id_start_time_index ON showtimes(movie_id, start_time)');
@@ -102,7 +102,7 @@ return new class extends Migration
         $indexes = Schema::getConnection()
             ->getDoctrineSchemaManager()
             ->listTableIndexes($table);
-        
+
         return isset($indexes[$index]);
     }
 };

@@ -1,42 +1,39 @@
 import React from 'react';
-import { Star, Play, Calendar } from 'lucide-react';
+import { Play, Ticket } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './MovieCard.css';
 
 const MovieCard = ({ movie }) => {
+    // Ưu tiên dùng slug cho URL nếu có, nếu không dùng id
+    const movieSlug = movie.slug || movie.id;
+    const detailsLink = `/movies/${movieSlug}`;
+    const bookingLink = `/booking/movie/${movieSlug}`;
+
     return (
         <div className="movie-card">
-            <Link to={`/movies/${movie.id}`} className="movie-poster">
+            <Link to={detailsLink} className="movie-poster">
                 <img src={movie.poster} alt={movie.title} />
                 <div className="movie-overlay">
                     <button className="btn-play-overlay">
-                        <Play fill="black" size={24} color="black" />
+                        <Play fill="white" size={24} color="white" />
                     </button>
-                    <div className="overlay-info">
-                        <span className="rating">
-                            <Star size={14} fill="#ffd700" color="#ffd700" />
-                            {movie.rating}
-                        </span>
-                        <span className="duration">{movie.duration}</span>
-                    </div>
                 </div>
             </Link>
+
             <div className="movie-details">
-                <Link to={`/movies/${movie.id}`}>
-                    <h3 className="movie-title">{movie.title}</h3>
+                <Link to={detailsLink} className="movie-title">
+                    {movie.title}
                 </Link>
+
                 <div className="movie-meta">
-                    <span className="genre">
-                        {movie.genre}
-                        <span className="separator">, </span>
-                        Chiếu Rạp
-                    </span>
-                    <span className="year">
-                        <Calendar size={14} />
-                        {movie.year}
-                    </span>
+                    <span className="genre">{movie.genre?.split(',')[0] || 'Phim'}</span>
+                    <span className="year">{movie.duration} min</span>
                 </div>
-                <Link to={`/booking/movie/${movie.id}`} className="btn-book">Book Now</Link>
+
+                <Link to={bookingLink} className="btn-book flex items-center justify-center gap-2">
+                    <Ticket size={16} />
+                    <span>Book Now</span>
+                </Link>
             </div>
         </div>
     );

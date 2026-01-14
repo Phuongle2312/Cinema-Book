@@ -2,22 +2,22 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\City;
-use App\Models\Theater;
-use App\Models\Room;
 use App\Models\Movie;
+use App\Models\Room;
 use App\Models\Seat;
 use App\Models\Showtime;
+use App\Models\Theater;
 use Carbon\Carbon;
-use Illuminate\Support\Str;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class CinemaSeeder extends Seeder
 {
     public function run(): void
     {
-        echo "Cleaning tables..." . PHP_EOL;
+        echo 'Cleaning tables...'.PHP_EOL;
         DB::statement('SET FOREIGN_KEY_CHECKS=0');
         DB::table('showtimes')->truncate();
         DB::table('seats')->truncate();
@@ -33,23 +33,23 @@ class CinemaSeeder extends Seeder
                 [
                     ['name' => 'CGV Vincom Đồng Khởi', 'address' => '72 Lê Thánh Tôn, Q.1'],
                     ['name' => 'CGV Sư Vạn Hạnh', 'address' => 'Vạn Hạnh Mall, Q.10'],
-                    ['name' => 'Galaxy Nguyễn Du', 'address' => '116 Nguyễn Du, Q.1']
-                ]
+                    ['name' => 'Galaxy Nguyễn Du', 'address' => '116 Nguyễn Du, Q.1'],
+                ],
             ],
             'Hà Nội' => [
                 'ha-noi',
                 [
                     ['name' => 'CGV Vincom Bà Triệu', 'address' => '191 Bà Triệu'],
                     ['name' => 'Lotte Cinema Landmark', 'address' => 'Keangnam Tower'],
-                    ['name' => 'BHD Star Discovery', 'address' => '302 Cầu Giấy']
-                ]
+                    ['name' => 'BHD Star Discovery', 'address' => '302 Cầu Giấy'],
+                ],
             ],
             'Đà Nẵng' => [
                 'da-nang',
                 [
                     ['name' => 'CGV Vĩnh Trung Plaza', 'address' => '255 Hùng Vương'],
-                    ['name' => 'Lotte Cinema Đà Nẵng', 'address' => 'Tầng 5 Lotte Mart']
-                ]
+                    ['name' => 'Lotte Cinema Đà Nẵng', 'address' => 'Tầng 5 Lotte Mart'],
+                ],
             ],
             'Cần Thơ' => ['can-tho', [['name' => 'CGV Sense City', 'address' => '1 Đại Lộ Hòa Bình']]],
             'Đồng Nai' => ['dong-nai', [['name' => 'CGV BigC Đồng Nai', 'address' => 'Xa Lộ Hà Nội, Biên Hòa']]],
@@ -86,7 +86,7 @@ class CinemaSeeder extends Seeder
                 // 3. Create Rooms (2 rooms per theater)
                 $roomTypes = [
                     ['name' => 'Room 1 (IMAX)', 'type' => 'IMAX'],
-                    ['name' => 'Room 2 (Standard)', 'type' => 'standard']
+                    ['name' => 'Room 2 (Standard)', 'type' => 'standard'],
                 ];
 
                 foreach ($roomTypes as $rType) {
@@ -107,14 +107,15 @@ class CinemaSeeder extends Seeder
                     }
                 }
             }
-            echo "Finished City: " . $cityName . PHP_EOL;
+            echo 'Finished City: '.$cityName.PHP_EOL;
         }
     }
 
     private function createSeatsForRoom($room)
     {
-        if (Seat::where('room_id', $room->room_id)->exists())
+        if (Seat::where('room_id', $room->room_id)->exists()) {
             return;
+        }
 
         $seats = [];
         $rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
@@ -133,7 +134,7 @@ class CinemaSeeder extends Seeder
                     'room_id' => $room->room_id,
                     'row' => $row,
                     'number' => $col,
-                    'seat_code' => $row . $col,
+                    'seat_code' => $row.$col,
                     'type' => $type,
                     'seat_type' => $type,
                     'is_available' => true,
@@ -158,7 +159,7 @@ class CinemaSeeder extends Seeder
                     [
                         'movie_id' => $movie->movie_id,
                         'room_id' => $room->room_id,
-                        'start_time' => $date->format('Y-m-d') . ' ' . $time . ':00',
+                        'start_time' => $date->format('Y-m-d').' '.$time.':00',
                     ],
                     [
                         'base_price' => ($room->screen_type === 'IMAX' ? 120000 : 80000),

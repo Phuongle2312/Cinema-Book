@@ -4,12 +4,8 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Movie;
-use App\Models\Genre;
-use App\Models\Language;
-use App\Models\Cast;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Admin Controller: MovieController
@@ -27,7 +23,7 @@ class MovieController extends Controller
 
         // Search
         if ($request->has('search')) {
-            $query->where('title', 'like', '%' . $request->search . '%');
+            $query->where('title', 'like', '%'.$request->search.'%');
         }
 
         // Filter by status
@@ -39,7 +35,7 @@ class MovieController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $movies
+            'data' => $movies,
         ]);
     }
 
@@ -67,7 +63,7 @@ class MovieController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -87,7 +83,7 @@ class MovieController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Phim đã được tạo thành công',
-            'data' => $movie
+            'data' => $movie,
         ], 201);
     }
 
@@ -99,10 +95,10 @@ class MovieController extends Controller
     {
         $movie = Movie::find($id);
 
-        if (!$movie) {
+        if (! $movie) {
             return response()->json([
                 'success' => false,
-                'message' => 'Phim không tồn tại'
+                'message' => 'Phim không tồn tại',
             ], 404);
         }
 
@@ -124,7 +120,7 @@ class MovieController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -144,7 +140,7 @@ class MovieController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Phim đã được cập nhật',
-            'data' => $movie
+            'data' => $movie,
         ]);
     }
 
@@ -156,10 +152,10 @@ class MovieController extends Controller
     {
         $movie = Movie::find($id);
 
-        if (!$movie) {
+        if (! $movie) {
             return response()->json([
                 'success' => false,
-                'message' => 'Phim không tồn tại'
+                'message' => 'Phim không tồn tại',
             ], 404);
         }
 
@@ -167,7 +163,7 @@ class MovieController extends Controller
         if ($movie->showtimes()->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không thể xóa phim đang có suất chiếu. Hãy đổi status thành "ended" thay vì xóa.'
+                'message' => 'Không thể xóa phim đang có suất chiếu. Hãy đổi status thành "ended" thay vì xóa.',
             ], 400);
         }
 
@@ -175,7 +171,7 @@ class MovieController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Phim đã được xóa'
+            'message' => 'Phim đã được xóa',
         ]);
     }
 }

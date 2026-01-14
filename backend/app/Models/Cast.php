@@ -10,6 +10,7 @@ class Cast extends Model
     use HasFactory;
 
     protected $table = 'cast';
+
     protected $primaryKey = 'cast_id';
 
     protected $fillable = [

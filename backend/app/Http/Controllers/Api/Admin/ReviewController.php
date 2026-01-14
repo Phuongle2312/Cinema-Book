@@ -32,9 +32,9 @@ class ReviewController extends Controller
 
         // Search by user name or email
         if ($request->has('search')) {
-            $query->whereHas('user', function($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('email', 'like', '%' . $request->search . '%');
+            $query->whereHas('user', function ($q) use ($request) {
+                $q->where('name', 'like', '%'.$request->search.'%')
+                    ->orWhere('email', 'like', '%'.$request->search.'%');
             });
         }
 
@@ -50,7 +50,7 @@ class ReviewController extends Controller
         return response()->json([
             'success' => true,
             'data' => $reviews,
-            'stats' => $stats
+            'stats' => $stats,
         ]);
     }
 
@@ -62,10 +62,10 @@ class ReviewController extends Controller
     {
         $review = Review::find($id);
 
-        if (!$review) {
+        if (! $review) {
             return response()->json([
                 'success' => false,
-                'message' => 'Đánh giá không tồn tại'
+                'message' => 'Đánh giá không tồn tại',
             ], 404);
         }
 
@@ -74,7 +74,7 @@ class ReviewController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Đánh giá đã được phê duyệt',
-            'data' => $review
+            'data' => $review,
         ]);
     }
 
@@ -86,10 +86,10 @@ class ReviewController extends Controller
     {
         $review = Review::find($id);
 
-        if (!$review) {
+        if (! $review) {
             return response()->json([
                 'success' => false,
-                'message' => 'Đánh giá không tồn tại'
+                'message' => 'Đánh giá không tồn tại',
             ], 404);
         }
 
@@ -98,7 +98,7 @@ class ReviewController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Đánh giá đã bị từ chối',
-            'data' => $review
+            'data' => $review,
         ]);
     }
 
@@ -110,10 +110,10 @@ class ReviewController extends Controller
     {
         $review = Review::find($id);
 
-        if (!$review) {
+        if (! $review) {
             return response()->json([
                 'success' => false,
-                'message' => 'Đánh giá không tồn tại'
+                'message' => 'Đánh giá không tồn tại',
             ], 404);
         }
 
@@ -121,7 +121,7 @@ class ReviewController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Đánh giá đã được xóa'
+            'message' => 'Đánh giá đã được xóa',
         ]);
     }
 }

@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 class Seat extends Model
 {
     use HasFactory;
+
     protected $primaryKey = 'seat_id';
 
     protected $fillable = [
@@ -25,7 +26,6 @@ class Seat extends Model
     /**
      * Relationships
      */
-
     public function room()
     {
         return $this->belongsTo(Room::class, 'room_id', 'room_id');
@@ -46,7 +46,6 @@ class Seat extends Model
     /**
      * Scopes
      */
-
     public function scopeByType($query, $type)
     {
         return $query->where('type', $type);

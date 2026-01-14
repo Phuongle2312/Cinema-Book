@@ -31,10 +31,10 @@ const movieService = {
         }
     },
 
-    // Chi tiết phim
-    getMovieById: async (id) => {
+    // Chi tiết phim (hỗ trợ cả slug và id)
+    getMovieById: async (idOrSlug) => {
         try {
-            const response = await api.get(`/movies/${id}`);
+            const response = await api.get(`/movies/${idOrSlug}`);
             return response.data;
         } catch (error) {
             console.error('Get movie details error:', error);

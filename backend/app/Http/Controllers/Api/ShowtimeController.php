@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Showtime;
-use App\Models\Seat;
 use App\Models\BookingSeat;
+use App\Models\Seat;
 use App\Models\SeatLock;
+use App\Models\Showtime;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class ShowtimeController extends Controller
 {
@@ -31,7 +31,7 @@ class ShowtimeController extends Controller
         // 2. Lọc theo Thành phố (QUAN TRỌNG: Khớp với giao diện Web bạn đang dùng)
         if ($request->filled('city')) {
             $query->whereHas('room.theater.city', function ($q) use ($request) {
-                $q->where('name', 'LIKE', '%' . $request->city . '%');
+                $q->where('name', 'LIKE', '%'.$request->city.'%');
             });
         }
 
@@ -54,7 +54,7 @@ class ShowtimeController extends Controller
         return response()->json([
             'success' => true,
             'count' => $showtimes->count(),
-            'data' => $showtimes
+            'data' => $showtimes,
         ]);
     }
 
@@ -75,10 +75,10 @@ class ShowtimeController extends Controller
 
         $showtime = Showtime::with(['room.theater', 'movie'])->find($id);
 
-        if (!$showtime) {
+        if (! $showtime) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không tìm thấy suất chiếu'
+                'message' => 'Không tìm thấy suất chiếu',
             ], 404);
         }
 
@@ -109,6 +109,7 @@ class ShowtimeController extends Controller
             } else {
                 $seat->status = 'available';
             }
+
             return $seat;
         });
 
@@ -122,9 +123,9 @@ class ShowtimeController extends Controller
                     'total_seats' => $seats->count(),
                     'booked_seats' => count($bookedSeatIds),
                     'locked_seats' => count($lockedSeatIds),
-                    'available_seats' => $seats->count() - count($bookedSeatIds) - count($lockedSeatIds)
-                ]
-            ]
+                    'available_seats' => $seats->count() - count($bookedSeatIds) - count($lockedSeatIds),
+                ],
+            ],
         ]);
     }
 }

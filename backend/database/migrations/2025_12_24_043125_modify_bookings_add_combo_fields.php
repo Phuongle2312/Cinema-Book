@@ -15,7 +15,7 @@ return new class extends Migration
             // Tách tổng tiền thành 2 phần: ghế và combo
             $table->decimal('seats_total', 10, 0)->default(0)->after('total_seats');
             $table->decimal('combo_total', 10, 0)->default(0)->after('seats_total');
-            
+
             // total_price sẽ = seats_total + combo_total
             // Không cần modify cột total_price vì đã tồn tại
         });

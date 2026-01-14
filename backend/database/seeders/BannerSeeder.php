@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\Movie;
 use App\Models\Genre;
+use App\Models\Movie;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 class BannerSeeder extends Seeder
 {

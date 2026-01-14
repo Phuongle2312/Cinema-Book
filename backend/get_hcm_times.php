@@ -1,11 +1,14 @@
 <?php
+
 use App\Models\City;
-use App\Models\Theater;
 use App\Models\Room;
 use App\Models\Showtime;
+use App\Models\Theater;
 
 $city = City::where('name', 'LIKE', '%Ho Chi Minh%')->first();
-if (!$city) die("HCM not found");
+if (! $city) {
+    exit('HCM not found');
+}
 
 $tIds = Theater::where('city_id', $city->city_id)->pluck('theater_id');
 $rIds = Room::whereIn('theater_id', $tIds)->pluck('room_id');
@@ -17,5 +20,5 @@ $showtimes = Showtime::whereIn('room_id', $rIds)
 
 echo "HCM Showtimes:\n";
 foreach ($showtimes as $s) {
-    echo $s->show_time . "\n";
+    echo $s->show_time."\n";
 }

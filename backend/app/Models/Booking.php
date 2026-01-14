@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 /**
  * Model: Booking
@@ -13,6 +13,7 @@ use Carbon\Carbon;
 class Booking extends Model
 {
     use HasFactory;
+
     protected $primaryKey = 'booking_id';
 
     protected $fillable = [
@@ -46,7 +47,7 @@ class Booking extends Model
         static::creating(function ($booking) {
             // Tạo booking code unique (VD: BK20231217001)
             if (empty($booking->booking_code)) {
-                $booking->booking_code = 'BK' . date('Ymd') . str_pad(
+                $booking->booking_code = 'BK'.date('Ymd').str_pad(
                     static::whereDate('created_at', today())->count() + 1,
                     3,
                     '0',
@@ -246,7 +247,7 @@ class Booking extends Model
     // Lấy thời gian còn lại để thanh toán (phút)
     public function getRemainingTimeAttribute()
     {
-        if ($this->status !== 'pending' || !$this->expires_at) {
+        if ($this->status !== 'pending' || ! $this->expires_at) {
             return 0;
         }
 

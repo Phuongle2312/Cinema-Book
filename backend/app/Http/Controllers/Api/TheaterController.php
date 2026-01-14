@@ -32,7 +32,7 @@ class TheaterController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $theaters
+            'data' => $theaters,
         ]);
     }
 
@@ -44,16 +44,16 @@ class TheaterController extends Controller
     {
         $theater = Theater::with('rooms')->find($id);
 
-        if (!$theater) {
+        if (! $theater) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không tìm thấy rạp'
+                'message' => 'Không tìm thấy rạp',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $theater
+            'data' => $theater,
         ]);
     }
 }

@@ -15,15 +15,15 @@ return new class extends Migration
             $table->id('combo_id');
             $table->string('name'); // Tên combo: "Combo 1", "Bắp nước lớn"
             $table->text('description')->nullable(); // Mô tả chi tiết
-            
+
             // Danh sách items trong combo (JSON)
             // Ví dụ: [{"item": "Bắp rang bơ", "size": "L"}, {"item": "Coca Cola", "size": "L"}]
             $table->json('items');
-            
+
             $table->decimal('price', 10, 0); // Giá combo (VNĐ)
             $table->string('image_url')->nullable(); // Hình ảnh combo
             $table->boolean('is_available')->default(true); // Còn bán không
-            
+
             $table->timestamps();
         });
     }

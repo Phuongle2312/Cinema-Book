@@ -1,14 +1,15 @@
 <?php
-require __DIR__ . '/vendor/autoload.php';
-$app = require_once __DIR__ . '/bootstrap/app.php';
+
+require __DIR__.'/vendor/autoload.php';
+$app = require_once __DIR__.'/bootstrap/app.php';
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 echo "Checking tables...\n";
 
-if (!Schema::hasTable('sessions')) {
+if (! Schema::hasTable('sessions')) {
     echo "Creating sessions table...\n";
     Schema::create('sessions', function (Blueprint $table) {
         $table->string('id')->primary();
@@ -23,7 +24,7 @@ if (!Schema::hasTable('sessions')) {
     echo "Sessions table exists.\n";
 }
 
-if (!Schema::hasTable('cache')) {
+if (! Schema::hasTable('cache')) {
     echo "Creating cache table...\n";
     Schema::create('cache', function (Blueprint $table) {
         $table->string('key')->primary();
@@ -33,7 +34,7 @@ if (!Schema::hasTable('cache')) {
     echo "Cache table created.\n";
 }
 
-if (!Schema::hasTable('cache_locks')) {
+if (! Schema::hasTable('cache_locks')) {
     echo "Creating cache_locks table...\n";
     Schema::create('cache_locks', function (Blueprint $table) {
         $table->string('key')->primary();

@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-
-
 use App\Models\Notification;
+use Illuminate\Http\Request;
 
 /**
  * Controller: NotificationController
@@ -31,7 +29,7 @@ class NotificationController extends Controller
         return response()->json([
             'success' => true,
             'data' => $notifications,
-            'unread_count' => $unreadCount
+            'unread_count' => $unreadCount,
         ]);
     }
 
@@ -45,10 +43,10 @@ class NotificationController extends Controller
             ->where('user_id', $request->user()->id)
             ->first();
 
-        if (!$notification) {
+        if (! $notification) {
             return response()->json([
                 'success' => false,
-                'message' => 'Thông báo không tồn tại'
+                'message' => 'Thông báo không tồn tại',
             ], 404);
         }
 
@@ -56,7 +54,7 @@ class NotificationController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Đã đánh dấu thông báo là đã đọc'
+            'message' => 'Đã đánh dấu thông báo là đã đọc',
         ]);
     }
 
@@ -72,8 +70,7 @@ class NotificationController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Đã đánh dấu tất cả thông báo là đã đọc'
+            'message' => 'Đã đánh dấu tất cả thông báo là đã đọc',
         ]);
     }
 }
-

@@ -1,9 +1,10 @@
 <?php
+
 use Illuminate\Support\Facades\DB;
 
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__.'/vendor/autoload.php';
 
-$app = require_once __DIR__ . '/bootstrap/app.php';
+$app = require_once __DIR__.'/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
@@ -17,7 +18,7 @@ try {
 
     echo "Available Dates:\n";
     foreach ($dates as $d) {
-        echo $d->show_date . " (" . $d->count . " showtimes)\n";
+        echo $d->show_date.' ('.$d->count." showtimes)\n";
     }
 
     // 2. Get unique cities from theaters connected to showtimes
@@ -31,17 +32,17 @@ try {
 
     echo "\nAvailable Cities for Showtimes:\n";
     foreach ($cities as $c) {
-        echo $c->city_name . " (" . $c->count . " showtimes)\n";
+        echo $c->city_name.' ('.$c->count." showtimes)\n";
     }
 
     // Check column name for room/screen
     $columns = DB::getSchemaBuilder()->getColumnListing('showtimes');
-    echo "\nShowtime Columns: " . implode(', ', $columns) . "\n";
+    echo "\nShowtime Columns: ".implode(', ', $columns)."\n";
 
 } catch (\Exception $e) {
-    echo "Error: " . $e->getMessage() . "\n";
+    echo 'Error: '.$e->getMessage()."\n";
 
     // Fallback debug
     $columns = DB::getSchemaBuilder()->getColumnListing('showtimes');
-    echo "Showtime Columns: " . implode(', ', $columns) . "\n";
+    echo 'Showtime Columns: '.implode(', ', $columns)."\n";
 }

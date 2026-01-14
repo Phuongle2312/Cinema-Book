@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 return new class extends Migration
@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('country', 100)->default('Vietnam');
             $table->string('timezone', 50)->default('Asia/Ho_Chi_Minh');
             $table->timestamps();
-            
+
             // Index cho performance
             $table->index('slug');
         });
@@ -54,13 +54,13 @@ return new class extends Migration
 
         // 4. Migrate dữ liệu: map theaters.city -> cities.city_id
         $theaters = DB::table('theaters')->get();
-        
+
         foreach ($theaters as $theater) {
             if ($theater->city) {
                 $city = DB::table('cities')
                     ->where('name', $theater->city)
                     ->first();
-                
+
                 if ($city) {
                     DB::table('theaters')
                         ->where('theater_id', $theater->theater_id)
@@ -92,13 +92,13 @@ return new class extends Migration
 
         // 2. Migrate dữ liệu ngược lại: cities.name -> theaters.city
         $theaters = DB::table('theaters')->get();
-        
+
         foreach ($theaters as $theater) {
             if ($theater->city_id) {
                 $city = DB::table('cities')
                     ->where('city_id', $theater->city_id)
                     ->first();
-                
+
                 if ($city) {
                     DB::table('theaters')
                         ->where('theater_id', $theater->theater_id)

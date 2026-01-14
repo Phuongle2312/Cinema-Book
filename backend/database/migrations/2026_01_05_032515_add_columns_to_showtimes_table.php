@@ -12,19 +12,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('showtimes', function (Blueprint $table) {
-            if (!Schema::hasColumn('showtimes', 'show_date')) {
+            if (! Schema::hasColumn('showtimes', 'show_date')) {
                 $table->date('show_date')->nullable()->after('room_id');
             }
-            if (!Schema::hasColumn('showtimes', 'show_time')) {
+            if (! Schema::hasColumn('showtimes', 'show_time')) {
                 $table->string('show_time')->nullable()->after('show_date');
             }
-            if (!Schema::hasColumn('showtimes', 'vip_price')) {
+            if (! Schema::hasColumn('showtimes', 'vip_price')) {
                 $table->decimal('vip_price', 10, 2)->default(0)->after('base_price');
             }
-            if (!Schema::hasColumn('showtimes', 'is_active')) {
+            if (! Schema::hasColumn('showtimes', 'is_active')) {
                 $table->boolean('is_active')->default(true)->after('vip_price');
             }
-            if (!Schema::hasColumn('showtimes', 'available_seats')) {
+            if (! Schema::hasColumn('showtimes', 'available_seats')) {
                 $table->integer('available_seats')->default(0)->after('is_active');
             }
         });

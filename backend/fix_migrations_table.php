@@ -1,6 +1,7 @@
 <?php
-require __DIR__ . '/vendor/autoload.php';
-$app = require_once __DIR__ . '/bootstrap/app.php';
+
+require __DIR__.'/vendor/autoload.php';
+$app = require_once __DIR__.'/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
@@ -22,7 +23,7 @@ try {
             DB::statement('ALTER TABLE migrations ADD PRIMARY KEY (id)');
             echo "Primary Key added to id.\n";
         } catch (\Exception $e) {
-            echo "Primary Key add failed (might already exist): " . $e->getMessage() . "\n";
+            echo 'Primary Key add failed (might already exist): '.$e->getMessage()."\n";
         }
 
         // 3. Add AUTO_INCREMENT
@@ -30,12 +31,12 @@ try {
             DB::statement('ALTER TABLE migrations MODIFY id INT UNSIGNED NOT NULL AUTO_INCREMENT');
             echo "AUTO_INCREMENT added to id.\n";
         } catch (\Exception $e) {
-            echo "AUTO_INCREMENT add failed: " . $e->getMessage() . "\n";
+            echo 'AUTO_INCREMENT add failed: '.$e->getMessage()."\n";
         }
-        
+
     } else {
         echo "Migrations table does not exist.\n";
     }
 } catch (\Exception $e) {
-    echo "Fatal Error: " . $e->getMessage() . "\n";
+    echo 'Fatal Error: '.$e->getMessage()."\n";
 }

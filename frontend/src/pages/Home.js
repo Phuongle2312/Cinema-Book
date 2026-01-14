@@ -67,6 +67,7 @@ const Home = () => {
                                 key={movie.movie_id}
                                 movie={{
                                     id: movie.movie_id,
+                                    slug: movie.slug,
                                     title: movie.title,
                                     poster: movie.poster_url || movie.image,
                                     rating: parseFloat(movie.rating) || 0,

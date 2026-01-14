@@ -4,15 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\BookingSeat;
 use App\Models\BookingCombo;
-use App\Models\Showtime;
+use App\Models\BookingSeat;
 use App\Models\Seat;
 use App\Models\SeatLock;
+use App\Models\Showtime;
 use App\Models\Transaction;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 /**
  * BookingController
@@ -70,11 +70,23 @@ class BookingController extends Controller
                 $comboTotal = $this->addCombosToBooking($booking, $request->combos);
             }
 
-            // 6. Cập nhật tổng tiền
+            // 6. Cập nhật tổng tiền (bao gồm tự động áp dụng ưu đãi hệ thống)
+            $totalPrice = $seatsTotal + $comboTotal;
+
+            // Tìm các ưu đãi hệ thống đang active
+            $systemOffers = \App\Models\Offer::systemWide()->get();
+            $totalDiscount = 0;
+
+            foreach ($systemOffers as $offer) {
+                if (! $offer->min_purchase_amount || $totalPrice >= $offer->min_purchase_amount) {
+                    $totalDiscount += $offer->calculateDiscount($totalPrice - $totalDiscount);
+                }
+            }
+
             $booking->update([
                 'seats_total' => $seatsTotal,
                 'combo_total' => $comboTotal,
-                'total_price' => $seatsTotal + $comboTotal,
+                'total_price' => max(0, $totalPrice - $totalDiscount),
             ]);
 
             DB::commit();
@@ -87,14 +99,15 @@ class BookingController extends Controller
                 'message' => 'Đặt vé thành công. Vui lòng thanh toán trong 6 phút.',
                 'data' => $booking,
                 'expires_at' => $booking->expires_at->toISOString(),
-                'remaining_seconds' => $booking->expires_at->diffInSeconds(now())
+                'remaining_seconds' => $booking->expires_at->diffInSeconds(now()),
             ], 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Đặt vé thất bại: ' . $e->getMessage()
+                'message' => 'Đặt vé thất bại: '.$e->getMessage(),
             ], 400);
         }
     }
@@ -111,7 +124,7 @@ class BookingController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $booking
+            'data' => $booking,
         ]);
     }
 
@@ -131,7 +144,7 @@ class BookingController extends Controller
         if ($booking->user_id !== $request->user()->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Bạn không có quyền thanh toán booking này'
+                'message' => 'Bạn không có quyền thanh toán booking này',
             ], 403);
         }
 
@@ -139,16 +152,17 @@ class BookingController extends Controller
         if ($booking->status !== 'pending') {
             return response()->json([
                 'success' => false,
-                'message' => 'Booking này đã được xử lý'
+                'message' => 'Booking này đã được xử lý',
             ], 400);
         }
 
         // Kiểm tra hết hạn
         if ($booking->expires_at && $booking->expires_at->isPast()) {
             $booking->update(['status' => 'expired']);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Booking đã hết hạn'
+                'message' => 'Booking đã hết hạn',
             ], 400);
         }
 
@@ -185,15 +199,16 @@ class BookingController extends Controller
                 'message' => 'Thanh toán thành công',
                 'data' => [
                     'booking' => $booking,
-                    'transaction' => $transaction
-                ]
+                    'transaction' => $transaction,
+                ],
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Thanh toán thất bại: ' . $e->getMessage()
+                'message' => 'Thanh toán thất bại: '.$e->getMessage(),
             ], 400);
         }
     }
@@ -210,14 +225,14 @@ class BookingController extends Controller
             'showtime.room.theater',
             'seats',
             'combos',
-            'transaction'
+            'transaction',
         ])->findOrFail($id);
 
         // Kiểm tra booking đã confirmed
         if ($booking->status !== 'confirmed') {
             return response()->json([
                 'success' => false,
-                'message' => 'Vé chưa được thanh toán'
+                'message' => 'Vé chưa được thanh toán',
             ], 400);
         }
 
@@ -244,7 +259,7 @@ class BookingController extends Controller
                 return [
                     'row' => $seat->row,
                     'number' => $seat->number,
-                    'label' => $seat->row . $seat->number,
+                    'label' => $seat->row.$seat->number,
                 ];
             }),
             'combos' => $booking->combos->map(function ($combo) {
@@ -263,12 +278,12 @@ class BookingController extends Controller
             'user' => [
                 'name' => $booking->user->name,
                 'email' => $booking->user->email,
-            ]
+            ],
         ];
 
         return response()->json([
             'success' => true,
-            'data' => $eTicket
+            'data' => $eTicket,
         ]);
     }
 
@@ -284,7 +299,7 @@ class BookingController extends Controller
             'showtime.movie',
             'showtime.room.theater',
             'seats',
-            'transaction'
+            'transaction',
         ])->where('user_id', $user->id);
 
         // Lọc theo trạng thái
@@ -312,7 +327,7 @@ class BookingController extends Controller
                 'current_page' => $bookings->currentPage(),
                 'last_page' => $bookings->lastPage(),
                 'total' => $bookings->total(),
-            ]
+            ],
         ]);
     }
 
@@ -423,7 +438,7 @@ class BookingController extends Controller
      */
     private function generateBookingCode()
     {
-        return 'BK' . date('Ymd') . str_pad(
+        return 'BK'.date('Ymd').str_pad(
             Booking::whereDate('created_at', today())->count() + 1,
             4,
             '0',
@@ -436,7 +451,7 @@ class BookingController extends Controller
      */
     private function generateTransactionCode()
     {
-        return 'TXN' . date('YmdHis') . rand(1000, 9999);
+        return 'TXN'.date('YmdHis').rand(1000, 9999);
     }
 
     /**
@@ -446,6 +461,6 @@ class BookingController extends Controller
     {
         // Trong thực tế, bạn sẽ dùng thư viện QR code
         // Ở đây chỉ return URL để generate QR
-        return "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . $bookingCode;
+        return 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='.$bookingCode;
     }
 }

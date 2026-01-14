@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 /**
  * Model: SeatLock
@@ -13,6 +13,7 @@ use Carbon\Carbon;
 class SeatLock extends Model
 {
     use HasFactory;
+
     protected $primaryKey = 'lock_id';
 
     protected $fillable = [
@@ -46,7 +47,6 @@ class SeatLock extends Model
     /**
      * Relationships
      */
-
     public function seat()
     {
         return $this->belongsTo(Seat::class);

@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -16,7 +15,7 @@ return new class extends Migration
         // 1. Migrate data from booking_seats to booking_details if any unique data exists
         // In this case, both tables usually exist because of previous inconsistent migrations.
         // booking_details (formerly tickets) is more comprehensive.
-        
+
         // 2. Drop legacy screens table (renamed to rooms previously)
         Schema::dropIfExists('screens');
 
@@ -31,7 +30,8 @@ return new class extends Migration
                     Schema::table('booking_details', function (Blueprint $table) use ($fk) {
                         $table->dropForeign($fk);
                     });
-                } catch (\Exception $e) {}
+                } catch (\Exception $e) {
+                }
             }
 
             foreach (['booking_details_seat_id_foreign', 'tickets_seat_id_foreign'] as $fk) {
@@ -39,7 +39,8 @@ return new class extends Migration
                     Schema::table('booking_details', function (Blueprint $table) use ($fk) {
                         $table->dropForeign($fk);
                     });
-                } catch (\Exception $e) {}
+                } catch (\Exception $e) {
+                }
             }
 
             // Create new standardized foreign keys
@@ -62,7 +63,8 @@ return new class extends Migration
                 Schema::table('transactions', function (Blueprint $table) {
                     $table->dropForeign('transactions_booking_id_foreign');
                 });
-            } catch (\Exception $e) {}
+            } catch (\Exception $e) {
+            }
 
             Schema::table('transactions', function (Blueprint $table) {
                 $table->foreign('booking_id')
@@ -78,7 +80,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Re-creating dropped tables would be complex due to data loss, 
+        // Re-creating dropped tables would be complex due to data loss,
         // but for structural integrity:
         Schema::create('booking_seats', function (Blueprint $table) {
             $table->id();

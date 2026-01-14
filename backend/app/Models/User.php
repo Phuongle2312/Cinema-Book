@@ -14,7 +14,7 @@ use Laravel\Sanctum\HasApiTokens; // Thêm Sanctum
  */
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens; // Thêm HasApiTokens cho Sanctum
+    use HasApiTokens, HasFactory, Notifiable; // Thêm HasApiTokens cho Sanctum
 
     /**
      * Các trường có thể mass assign
@@ -28,7 +28,7 @@ class User extends Authenticatable
         'role',
         'provider',        // google, facebook
         'provider_id',     // ID từ provider
-        'avatar',          // URL avatar
+        'user_level',      // 1: Free, 2: Bought, 3: Watched
     ];
 
     /**
@@ -48,23 +48,24 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'date_of_birth' => 'date',
+            'user_level' => 'integer',
         ];
     }
 
     /**
      * Relationships
      */
-    
+
     // Một user có nhiều bookings
     public function bookings()
     {
         return $this->hasMany(Booking::class);
     }
 
-    // Một user có nhiều reviews
-    public function reviews()
+    // Một user có nhiều phim yêu thích (Wishlist)
+    public function wishlists()
     {
-        return $this->hasMany(Review::class);
+        return $this->hasMany(Wishlist::class);
     }
 
     // Một user có nhiều notifications
@@ -79,6 +80,12 @@ class User extends Authenticatable
         return $this->hasMany(Transaction::class);
     }
 
+    // Một user có nhiều verify payments
+    public function verifyPayments()
+    {
+        return $this->hasMany(VerifyPayment::class);
+    }
+
     // Một user có nhiều seat locks
     public function seatLocks()
     {
@@ -88,7 +95,7 @@ class User extends Authenticatable
     /**
      * Helper Methods
      */
-    
+
     // Kiểm tra user có phải admin không
     public function isAdmin(): bool
     {
@@ -98,7 +105,6 @@ class User extends Authenticatable
     // Kiểm tra user đăng nhập bằng social login không
     public function isSocialLogin(): bool
     {
-        return !empty($this->provider);
+        return ! empty($this->provider);
     }
 }
-

@@ -3,12 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-
-
-use App\Models\Review;
-use App\Models\Movie;
 use App\Models\Booking;
+use App\Models\Movie;
+use App\Models\Review;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -25,10 +23,10 @@ class ReviewController extends Controller
     {
         // Kiểm tra phim có tồn tại không
         $movie = Movie::find($movieId);
-        if (!$movie) {
+        if (! $movie) {
             return response()->json([
                 'success' => false,
-                'message' => 'Phim không tồn tại'
+                'message' => 'Phim không tồn tại',
             ], 404);
         }
 
@@ -40,7 +38,7 @@ class ReviewController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -52,13 +50,13 @@ class ReviewController extends Controller
         if ($existingReview) {
             return response()->json([
                 'success' => false,
-                'message' => 'Bạn đã đánh giá phim này rồi'
+                'message' => 'Bạn đã đánh giá phim này rồi',
             ], 400);
         }
 
         // Kiểm tra user đã xem phim này chưa (verified purchase)
         $hasBooking = Booking::where('user_id', $request->user()->id)
-            ->whereHas('showtime', function($query) use ($movieId) {
+            ->whereHas('showtime', function ($query) use ($movieId) {
                 $query->where('movie_id', $movieId);
             })
             ->where('payment_status', 'completed')
@@ -79,7 +77,7 @@ class ReviewController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Đánh giá của bạn đã được gửi và đang chờ phê duyệt',
-            'data' => $review
+            'data' => $review,
         ], 201);
     }
 
@@ -91,10 +89,10 @@ class ReviewController extends Controller
     {
         // Kiểm tra phim có tồn tại không
         $movie = Movie::find($movieId);
-        if (!$movie) {
+        if (! $movie) {
             return response()->json([
                 'success' => false,
-                'message' => 'Phim không tồn tại'
+                'message' => 'Phim không tồn tại',
             ], 404);
         }
 
@@ -119,14 +117,13 @@ class ReviewController extends Controller
                 '3_star' => Review::where('movie_id', $movieId)->approved()->where('rating', 3)->count(),
                 '2_star' => Review::where('movie_id', $movieId)->approved()->where('rating', 2)->count(),
                 '1_star' => Review::where('movie_id', $movieId)->approved()->where('rating', 1)->count(),
-            ]
+            ],
         ];
 
         return response()->json([
             'success' => true,
             'data' => $reviews,
-            'stats' => $stats
+            'stats' => $stats,
         ]);
     }
 }
-

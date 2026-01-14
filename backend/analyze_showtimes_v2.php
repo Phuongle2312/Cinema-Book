@@ -1,9 +1,10 @@
 <?php
+
 use Illuminate\Support\Facades\DB;
 
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__.'/vendor/autoload.php';
 
-$app = require_once __DIR__ . '/bootstrap/app.php';
+$app = require_once __DIR__.'/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
@@ -18,13 +19,13 @@ try {
     echo "Available Dates:\n";
     foreach ($dates as $d) {
         $count = DB::table('showtimes')->whereDate('start_time', $d->show_date)->count();
-        echo $d->show_date . " (" . $count . " showtimes)\n";
+        echo $d->show_date.' ('.$count." showtimes)\n";
     }
 
     // 2. Get unique cities
     // We need to know if it's room_id or screen_id
-    // Based on previous step error output columns: "showtime_id, movie_id, room_id, start_time..." 
-    // Wait, the previous output was truncated but I saw "room_id" in my previous turns? 
+    // Based on previous step error output columns: "showtime_id, movie_id, room_id, start_time..."
+    // Wait, the previous output was truncated but I saw "room_id" in my previous turns?
     // Actually, let's assume `room_id` because `rooms` table exists and `ShowtimeController` uses `room`.
 
     $cities = DB::table('showtimes')
@@ -44,9 +45,9 @@ try {
             ->join('cities', 'theaters.city_id', '=', 'cities.city_id')
             ->where('cities.name', $c->city_name)
             ->count();
-        echo $c->city_name . " (" . $count . " showtimes)\n";
+        echo $c->city_name.' ('.$count." showtimes)\n";
     }
 
 } catch (\Exception $e) {
-    echo "Error: " . $e->getMessage();
+    echo 'Error: '.$e->getMessage();
 }

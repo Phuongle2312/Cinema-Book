@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Theater;
 use App\Models\City;
+use App\Models\Theater;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -29,14 +29,14 @@ class TheaterController extends Controller
 
         // Search by name
         if ($request->has('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $query->where('name', 'like', '%'.$request->search.'%');
         }
 
         $theaters = $query->orderBy('created_at', 'desc')->paginate(15);
 
         return response()->json([
             'success' => true,
-            'data' => $theaters
+            'data' => $theaters,
         ]);
     }
 
@@ -56,7 +56,7 @@ class TheaterController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -66,7 +66,7 @@ class TheaterController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Rạp chiếu đã được tạo thành công',
-            'data' => $theater
+            'data' => $theater,
         ], 201);
     }
 
@@ -78,10 +78,10 @@ class TheaterController extends Controller
     {
         $theater = Theater::find($id);
 
-        if (!$theater) {
+        if (! $theater) {
             return response()->json([
                 'success' => false,
-                'message' => 'Rạp không tồn tại'
+                'message' => 'Rạp không tồn tại',
             ], 404);
         }
 
@@ -95,7 +95,7 @@ class TheaterController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -105,7 +105,7 @@ class TheaterController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Rạp chiếu đã được cập nhật',
-            'data' => $theater
+            'data' => $theater,
         ]);
     }
 
@@ -117,10 +117,10 @@ class TheaterController extends Controller
     {
         $theater = Theater::find($id);
 
-        if (!$theater) {
+        if (! $theater) {
             return response()->json([
                 'success' => false,
-                'message' => 'Rạp không tồn tại'
+                'message' => 'Rạp không tồn tại',
             ], 404);
         }
 
@@ -128,7 +128,7 @@ class TheaterController extends Controller
         if ($theater->showtimes()->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không thể xóa rạp đang có suất chiếu'
+                'message' => 'Không thể xóa rạp đang có suất chiếu',
             ], 400);
         }
 
@@ -136,7 +136,7 @@ class TheaterController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Rạp chiếu đã được xóa'
+            'message' => 'Rạp chiếu đã được xóa',
         ]);
     }
 }

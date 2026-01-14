@@ -10,6 +10,7 @@ class BookingSeat extends Model
     use HasFactory;
 
     protected $table = 'booking_seats';
+
     protected $primaryKey = 'id';
 
     protected $fillable = [

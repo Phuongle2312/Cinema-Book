@@ -17,24 +17,23 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password')->nullable(); // Nullable cho social login
-            
+
             // Thông tin bổ sung
             $table->string('phone', 15)->nullable();
             $table->date('date_of_birth')->nullable();
             $table->enum('role', ['user', 'admin'])->default('user');
-            
+
             // Social Login
             $table->string('provider')->nullable(); // google, facebook
             $table->string('provider_id')->nullable();
             $table->text('avatar')->nullable();
-            
+
             $table->rememberToken();
             $table->timestamps();
-            
+
             // Index cho tìm kiếm nhanh
             $table->index(['provider', 'provider_id']);
         });
-
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();

@@ -1,7 +1,8 @@
 <?php
-use Illuminate\Support\Facades\DB;
+
 use App\Models\Showtime;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 echo "--- SELECTIVE RESTORE ---\n";
 
@@ -13,7 +14,7 @@ DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
 foreach ($tables as $table) {
     echo "Processing $table...\n";
-    
+
     // 1. Drop if exists
     DB::statement("DROP TABLE IF EXISTS `$table`");
 
@@ -26,7 +27,7 @@ foreach ($tables as $table) {
             DB::unprepared($matches[0]);
             echo " - Created table $table.\n";
         } catch (\Exception $e) {
-            echo " - Error creating $table: " . $e->getMessage() . "\n";
+            echo " - Error creating $table: ".$e->getMessage()."\n";
         }
     } else {
         echo " - CREATE statement not found for $table.\n";
@@ -43,7 +44,7 @@ foreach ($tables as $table) {
                 DB::unprepared($stmt);
                 $count++;
             } catch (\Exception $e) {
-                echo " - Error inserting into $table: " . $e->getMessage() . "\n";
+                echo " - Error inserting into $table: ".$e->getMessage()."\n";
             }
         }
         echo " - Executed $count INSERT statements for $table.\n";
@@ -60,15 +61,19 @@ if (Schema::hasTable('showtimes')) {
     echo "Updating showtimes to $today...\n";
     $showtimes = Showtime::all();
     foreach ($showtimes as $s) {
-        if (!$s->show_time) continue;
-        $originalTime = Carbon::createFromFormat('H:i:s', $s->show_time); 
+        if (! $s->show_time) {
+            continue;
+        }
+        $originalTime = Carbon::createFromFormat('H:i:s', $s->show_time);
         // Note: show_time in dump is '10:00' (H:i) but sometimes matches 10:00:00
         // Adjust parsing if needed.
-        if (!$originalTime) $originalTime = Carbon::parse($s->show_time);
+        if (! $originalTime) {
+            $originalTime = Carbon::parse($s->show_time);
+        }
 
         $s->show_date = $today;
-        $s->start_time = Carbon::parse($today . ' ' . $originalTime->format('H:i:s'));
+        $s->start_time = Carbon::parse($today.' '.$originalTime->format('H:i:s'));
         $s->save();
     }
-    echo "Updated " . $showtimes->count() . " showtimes.\n";
+    echo 'Updated '.$showtimes->count()." showtimes.\n";
 }

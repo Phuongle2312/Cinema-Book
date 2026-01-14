@@ -20,6 +20,7 @@ class Movie extends Model
         'title',
         'slug',
         'description',
+        'content',
         'synopsis',
         'duration',
         'release_date',
@@ -79,17 +80,14 @@ class Movie extends Model
     {
         return $this->belongsToMany(Cast::class, 'movie_cast', 'movie_id', 'cast_id')
             ->wherePivot('role', 'actor')
-            ->withPivot('character_name', 'order')
-            ->orderBy('order');
+            ->withPivot('character_name');
     }
 
     // Lấy chỉ đạo diễn
     public function directors()
     {
         return $this->belongsToMany(Cast::class, 'movie_cast', 'movie_id', 'cast_id')
-            ->wherePivot('role', 'director')
-            ->withPivot('order')
-            ->orderBy('order');
+            ->wherePivot('role', 'director');
     }
 
     // Một phim có nhiều suất chiếu
@@ -98,10 +96,10 @@ class Movie extends Model
         return $this->hasMany(Showtime::class, 'movie_id', 'movie_id');
     }
 
-    // Một phim có nhiều reviews
-    public function reviews()
+    // Một phim có trong nhiều wishlist của users
+    public function wishlists()
     {
-        return $this->hasMany(Review::class, 'movie_id', 'movie_id');
+        return $this->hasMany(Wishlist::class, 'movie_id', 'movie_id');
     }
 
     /**
@@ -151,22 +149,6 @@ class Movie extends Model
         return $query->whereHas('languages', function ($q) use ($languageId) {
             $q->where('languages.language_id', $languageId);
         });
-    }
-
-    /**
-     * Accessors & Mutators
-     */
-
-    // Lấy rating trung bình từ reviews
-    public function getAverageRatingAttribute()
-    {
-        return $this->reviews()->avg('rating') ?? 0;
-    }
-
-    // Lấy tổng số reviews
-    public function getTotalReviewsAttribute()
-    {
-        return $this->reviews()->count();
     }
 
     // Kiểm tra phim có đang chiếu không

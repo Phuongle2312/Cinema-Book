@@ -15,6 +15,7 @@ class Room extends Model
     use HasFactory;
 
     protected $table = 'rooms';
+
     protected $primaryKey = 'room_id';
 
     protected $fillable = [

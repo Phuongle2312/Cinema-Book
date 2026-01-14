@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Movie;
 use App\Models\Genre;
-use Illuminate\Support\Str;
+use App\Models\Movie;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class MovieSeeder extends Seeder
 {
@@ -66,8 +66,9 @@ class MovieSeeder extends Seeder
             if (isset($item['genres'])) {
                 $genreIds = [];
                 foreach ($item['genres'] as $genreName) {
-                    if ($genreName === 'In Theaters')
-                        continue; // Skip non-genre tags
+                    if ($genreName === 'In Theaters') {
+                        continue;
+                    } // Skip non-genre tags
                     $genre = Genre::firstOrCreate(
                         ['name' => $genreName],
                         ['slug' => Str::slug($genreName)]

@@ -4,10 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Movie;
-use App\Models\Genre;
-use App\Models\Language;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 /**
  * MovieController
@@ -31,7 +28,9 @@ class MovieController extends Controller
         // Lọc theo thành phố (qua theaters)
         if ($request->filled('city')) {
             $query->whereHas('showtimes.room.theater', function ($q) use ($request) {
-                $q->where('city', $request->city);
+                $q->whereHas('city', function ($cq) use ($request) {
+                    $cq->where('name', $request->city);
+                });
             });
         }
 
@@ -39,12 +38,7 @@ class MovieController extends Controller
         $sortBy = $request->get('sort_by', 'release_date');
         $sortOrder = $request->get('sort_order', 'desc');
 
-        if ($sortBy === 'rating') {
-            $query->withAvg('reviews', 'rating')
-                ->orderBy('reviews_avg_rating', $sortOrder);
-        } else {
-            $query->orderBy($sortBy, $sortOrder);
-        }
+        $query->orderBy($sortBy, $sortOrder);
 
         // Phân trang
         $perPage = $request->get('per_page', 12);
@@ -58,77 +52,72 @@ class MovieController extends Controller
                 'last_page' => $movies->lastPage(),
                 'per_page' => $movies->perPage(),
                 'total' => $movies->total(),
-            ]
+            ],
         ]);
     }
 
     /**
      * GET /api/movies/featured
-     * Lấy danh sách phim nổi bật (rating cao, đang chiếu)
+     * Lấy danh sách phim nổi bật (đang chiếu)
      */
     public function featured()
     {
         $movies = Movie::with(['genres', 'languages'])
-            ->withAvg('reviews', 'rating')
             ->where('is_featured', true)
             ->whereIn('status', ['now_showing', 'coming_soon'])
-            ->orderBy('reviews_avg_rating', 'desc')
+            ->latest()
             ->limit(10)
             ->get();
 
         // Fallback: If no featured movies, get latest now_showing movies
-        if ($movies->isEmpty()) {
-            $movies = Movie::with(['genres', 'languages'])
-                ->withAvg('reviews', 'rating')
+        if ($movies->count() < 4) {
+            $latest = Movie::with(['genres', 'languages'])
                 ->where('status', 'now_showing')
                 ->latest()
                 ->limit(10)
                 ->get();
+            $movies = $movies->merge($latest)->unique('movie_id')->take(10);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $movies
+            'data' => $movies,
         ]);
     }
 
     /**
-     * GET /api/movies/{id}
+     * GET /api/movies/{slug_or_id}
      * Lấy chi tiết phim bao gồm cast, genres, showtimes
      */
-    public function show($id)
+    public function show($slugOrId)
     {
-        $movie = Movie::with([
+        $query = Movie::with([
             'genres',
             'languages',
             'cast',
             'showtimes' => function ($query) {
                 $query->where('start_time', '>=', now())
-                    ->with('room.theater')
+                    ->with('room.theater.city')
                     ->orderBy('start_time');
             },
-            'reviews' => function ($query) {
-                $query->with('user:id,name')
-                    ->latest()
-                    ->limit(10);
-            }
-        ])->find($id);
+        ]);
 
-        if (!$movie) {
+        if (is_numeric($slugOrId)) {
+            $movie = $query->where('movie_id', $slugOrId)->first();
+        } else {
+            $movie = $query->where('slug', $slugOrId)->first();
+        }
+
+        if (! $movie) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không tìm thấy phim'
+                'message' => 'Không tìm thấy phim',
             ], 404);
         }
 
-        // Tính average rating từ reviews
-        $avgRating = $movie->reviews()->avg('rating');
-        $movie->average_rating = round($avgRating, 1);
-        $movie->review_count = $movie->reviews()->count();
-
         return response()->json([
             'success' => true,
-            'data' => $movie
+            'data' => $movie,
         ]);
     }
 
@@ -139,13 +128,12 @@ class MovieController extends Controller
     public function search(Request $request)
     {
         $request->validate([
-            'q' => 'required|string|min:2'
+            'q' => 'required|string|min:2',
         ]);
 
         $query = $request->get('q');
 
         $movies = Movie::with(['genres', 'languages'])
-            ->withAvg('reviews', 'rating')
             ->where(function ($q) use ($query) {
                 $q->where('title', 'LIKE', "%{$query}%")
                     ->orWhere('description', 'LIKE', "%{$query}%")
@@ -153,7 +141,7 @@ class MovieController extends Controller
                         $castQuery->where('name', 'LIKE', "%{$query}%");
                     });
             })
-            ->orderBy('reviews_avg_rating', 'desc')
+            ->latest()
             ->paginate(12);
 
         return response()->json([
@@ -163,8 +151,8 @@ class MovieController extends Controller
                 'current_page' => $movies->currentPage(),
                 'last_page' => $movies->lastPage(),
                 'total' => $movies->total(),
-                'query' => $query
-            ]
+                'query' => $query,
+            ],
         ]);
     }
 
@@ -178,46 +166,24 @@ class MovieController extends Controller
             'city' => 'nullable|string',
             'genre_id' => 'nullable|exists:genres,genre_id',
             'language_id' => 'nullable|exists:languages,language_id',
-            'rating' => 'nullable|numeric|min:0|max:10',
             'date' => 'nullable|date',
-            'status' => 'nullable|in:coming_soon,now_showing,ended'
+            'status' => 'nullable|in:coming_soon,now_showing,ended',
         ]);
 
         $query = Movie::with(['genres', 'languages']);
 
         // Lọc theo thành phố
         if ($request->filled('city')) {
-            $query->whereHas('showtimes.room.theater', function ($q) use ($request) {
-                $q->where('city', $request->city);
+            $query->whereHas('showtimes.room.theater.city', function ($q) use ($request) {
+                $q->where('name', $request->city);
             });
         }
 
-        // Lọc theo thể loại (ID hoặc Name/Slug)
+        // Lọc theo thể loại
         if ($request->filled('genre_id')) {
             $query->whereHas('genres', function ($q) use ($request) {
                 $q->where('genres.genre_id', $request->genre_id);
             });
-        } elseif ($request->filled('genre')) {
-            $query->whereHas('genres', function ($q) use ($request) {
-                $q->where('name', 'like', "%{$request->genre}%")
-                    ->orWhere('slug', 'like', "%{$request->genre}%");
-            });
-        }
-
-        // Lọc theo ngôn ngữ
-        if ($request->filled('language_id')) {
-            $query->whereHas('languages', function ($q) use ($request) {
-                $q->where('language_id', $request->language_id);
-            });
-        }
-
-        // Lọc theo rating tối thiểu
-        if ($request->filled('rating')) {
-            $query->withAvg('reviews', 'rating')
-                ->having('reviews_avg_rating', '>=', $request->rating);
-        } else {
-            // Always load avg rating for sorting if not filtered
-            $query->withAvg('reviews', 'rating');
         }
 
         // Lọc theo ngày chiếu
@@ -232,8 +198,7 @@ class MovieController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Sắp xếp
-        $query->orderBy('reviews_avg_rating', 'desc');
+        $query->latest();
 
         $movies = $query->paginate(12);
 
@@ -244,8 +209,8 @@ class MovieController extends Controller
                 'current_page' => $movies->currentPage(),
                 'last_page' => $movies->lastPage(),
                 'total' => $movies->total(),
-                'filters' => $request->only(['city', 'genre_id', 'language_id', 'rating', 'date', 'status'])
-            ]
+                'filters' => $request->only(['city', 'genre_id', 'language_id', 'date', 'status']),
+            ],
         ]);
     }
 }

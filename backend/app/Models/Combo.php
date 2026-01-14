@@ -12,8 +12,9 @@ use Illuminate\Database\Eloquent\Model;
 class Combo extends Model
 {
     protected $table = 'combos';
+
     protected $primaryKey = 'combo_id';
-    
+
     protected $fillable = [
         'name',
         'description',
@@ -21,12 +22,12 @@ class Combo extends Model
         'image_url',
         'is_available',
     ];
-    
+
     protected $casts = [
         'price' => 'decimal:0',
         'is_available' => 'boolean',
     ];
-    
+
     /**
      * Relationship: Combo có nhiều items
      */
@@ -34,7 +35,7 @@ class Combo extends Model
     {
         return $this->hasMany(ComboItem::class, 'combo_id', 'combo_id');
     }
-    
+
     /**
      * Relationship: Combo được đặt trong nhiều bookings (qua booking_combos)
      */
@@ -46,9 +47,9 @@ class Combo extends Model
             'combo_id',
             'booking_id'
         )->withPivot('quantity', 'unit_price', 'total_price')
-         ->withTimestamps();
+            ->withTimestamps();
     }
-    
+
     /**
      * Relationship: Chi tiết booking_combos
      */

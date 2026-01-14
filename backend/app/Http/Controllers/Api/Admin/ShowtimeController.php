@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Showtime;
 use App\Models\Movie;
-use App\Models\Theater;
 use App\Models\Room;
 use App\Models\Seat;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
+use App\Models\Showtime;
+use App\Models\Theater;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * Admin Controller: ShowtimeController
@@ -43,12 +43,12 @@ class ShowtimeController extends Controller
         }
 
         $showtimes = $query->orderBy('show_date', 'desc')
-                          ->orderBy('show_time', 'desc')
-                          ->paginate(20);
+            ->orderBy('show_time', 'desc')
+            ->paginate(20);
 
         return response()->json([
             'success' => true,
-            'data' => $showtimes
+            'data' => $showtimes,
         ]);
     }
 
@@ -73,35 +73,35 @@ class ShowtimeController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
         // Kiểm tra room có thuộc theater không
         $room = Room::where('id', $request->room_id)
-                    ->where('theater_id', $request->theater_id)
-                    ->first();
+            ->where('theater_id', $request->theater_id)
+            ->first();
 
-        if (!$room) {
+        if (! $room) {
             return response()->json([
                 'success' => false,
-                'message' => 'Phòng chiếu không thuộc rạp này'
+                'message' => 'Phòng chiếu không thuộc rạp này',
             ], 400);
         }
 
         // --- LOGIC KIỂM TRA TRÙNG LỊCH (CONFLICT CHECK) ---
-        
+
         // 1. Lấy thông tin phim để biết thời lượng
         $movie = Movie::find($request->movie_id);
-        if (!$movie) {
-             return response()->json(['success' => false, 'message' => 'Phim không tồn tại'], 404);
+        if (! $movie) {
+            return response()->json(['success' => false, 'message' => 'Phim không tồn tại'], 404);
         }
 
         $cleaningTime = 15; // Thời gian dọn dẹp giữa các suất : 15 phút
 
         // 2. Tính thời gian Bắt đầu và Kết thúc của suất chiếu MỚI dự kiến
         // Format: YYYY-MM-DD HH:mm:ss
-        $newStart = Carbon::parse($request->show_date . ' ' . $request->show_time);
+        $newStart = Carbon::parse($request->show_date.' '.$request->show_time);
         $newEnd = $newStart->copy()->addMinutes($movie->duration + $cleaningTime);
 
         // 3. Lấy tất cả suất chiếu CŨ trong cùng Phòng và cùng Ngày
@@ -114,8 +114,8 @@ class ShowtimeController extends Controller
         foreach ($existingShowtimes as $existing) {
             // Tính thời gian của suất cũ
             // Dùng start_time có sẵn trong DB hoặc parse lại từ show_date/time cho chắc chắn
-            $existingStart = Carbon::parse($existing->show_date->format('Y-m-d') . ' ' . $existing->show_time);
-            
+            $existingStart = Carbon::parse($existing->show_date->format('Y-m-d').' '.$existing->show_time);
+
             // Thời lượng phim cũ + dọn dẹp
             $duration = $existing->movie ? $existing->movie->duration : 0;
             $existingEnd = $existingStart->copy()->addMinutes($duration + $cleaningTime);
@@ -124,7 +124,7 @@ class ShowtimeController extends Controller
             if ($newStart->lt($existingEnd) && $newEnd->gt($existingStart)) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Phòng chiếu bị trùng lịch! Phòng bận từ " . $existingStart->format('H:i') . " đến " . $existingEnd->format('H:i') . " (Gồm dọn dẹp)."
+                    'message' => 'Phòng chiếu bị trùng lịch! Phòng bận từ '.$existingStart->format('H:i').' đến '.$existingEnd->format('H:i').' (Gồm dọn dẹp).',
                 ], 400);
             }
         }
@@ -136,7 +136,7 @@ class ShowtimeController extends Controller
 
             // Tự động tạo seats cho showtime này dựa trên room
             $roomSeats = Seat::where('room_id', $request->room_id)->get();
-            
+
             foreach ($roomSeats as $seat) {
                 $showtime->seats()->create([
                     'seat_id' => $seat->id,
@@ -151,14 +151,15 @@ class ShowtimeController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Suất chiếu đã được tạo thành công',
-                'data' => $showtime
+                'data' => $showtime,
             ], 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Lỗi khi tạo suất chiếu: ' . $e->getMessage()
+                'message' => 'Lỗi khi tạo suất chiếu: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -171,10 +172,10 @@ class ShowtimeController extends Controller
     {
         $showtime = Showtime::find($id);
 
-        if (!$showtime) {
+        if (! $showtime) {
             return response()->json([
                 'success' => false,
-                'message' => 'Suất chiếu không tồn tại'
+                'message' => 'Suất chiếu không tồn tại',
             ], 404);
         }
 
@@ -190,7 +191,7 @@ class ShowtimeController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -200,7 +201,7 @@ class ShowtimeController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Suất chiếu đã được cập nhật',
-            'data' => $showtime
+            'data' => $showtime,
         ]);
     }
 
@@ -212,10 +213,10 @@ class ShowtimeController extends Controller
     {
         $showtime = Showtime::find($id);
 
-        if (!$showtime) {
+        if (! $showtime) {
             return response()->json([
                 'success' => false,
-                'message' => 'Suất chiếu không tồn tại'
+                'message' => 'Suất chiếu không tồn tại',
             ], 404);
         }
 
@@ -223,7 +224,7 @@ class ShowtimeController extends Controller
         if ($showtime->bookings()->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không thể xóa suất chiếu đã có người đặt vé'
+                'message' => 'Không thể xóa suất chiếu đã có người đặt vé',
             ], 400);
         }
 
@@ -231,7 +232,7 @@ class ShowtimeController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Suất chiếu đã được xóa'
+            'message' => 'Suất chiếu đã được xóa',
         ]);
     }
 }

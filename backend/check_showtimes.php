@@ -3,19 +3,19 @@
 use App\Models\Showtime;
 use Carbon\Carbon;
 
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__.'/vendor/autoload.php';
 
-$app = require_once __DIR__ . '/bootstrap/app.php';
+$app = require_once __DIR__.'/bootstrap/app.php';
 
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-echo "Current Server Time: " . Carbon::now()->toDateTimeString() . "\n";
-echo "Current Timezone: " . config('app.timezone') . "\n";
+echo 'Current Server Time: '.Carbon::now()->toDateTimeString()."\n";
+echo 'Current Timezone: '.config('app.timezone')."\n";
 echo "--------------------------------------------------\n";
 
 $count = Showtime::count();
-echo "Total Showtimes in DB: " . $count . "\n";
+echo 'Total Showtimes in DB: '.$count."\n";
 
 if ($count == 0) {
     echo "No showtimes found.\n";

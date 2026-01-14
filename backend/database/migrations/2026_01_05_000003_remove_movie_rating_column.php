@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -49,12 +49,12 @@ return new class extends Migration
 
         // 3. Tính lại rating từ reviews và update vào movies
         $movies = DB::table('movies')->get();
-        
+
         foreach ($movies as $movie) {
             $avgRating = DB::table('reviews')
                 ->where('movie_id', $movie->movie_id)
                 ->avg('rating');
-            
+
             DB::table('movies')
                 ->where('movie_id', $movie->movie_id)
                 ->update(['rating' => round($avgRating ?? 0, 1)]);

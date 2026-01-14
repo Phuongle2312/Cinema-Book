@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -21,19 +21,19 @@ return new class extends Migration
             $table->string('item_size', 50)->nullable(); // Size: S, M, L, XL
             $table->integer('quantity')->default(1); // Số lượng
             $table->timestamps();
-            
+
             // Index cho performance
             $table->index('combo_id');
         });
 
         // 2. Migrate dữ liệu từ combos.items JSON sang combo_items
         $combos = DB::table('combos')->get();
-        
+
         foreach ($combos as $combo) {
             if ($combo->items) {
                 // Parse JSON items
                 $items = json_decode($combo->items, true);
-                
+
                 if (is_array($items)) {
                     foreach ($items as $item) {
                         DB::table('combo_items')->insert([
@@ -67,7 +67,7 @@ return new class extends Migration
 
         // 2. Migrate dữ liệu ngược lại: combo_items -> combos.items JSON
         $combos = DB::table('combos')->get();
-        
+
         foreach ($combos as $combo) {
             $items = DB::table('combo_items')
                 ->where('combo_id', $combo->combo_id)
@@ -80,7 +80,7 @@ return new class extends Migration
                     ];
                 })
                 ->toArray();
-            
+
             DB::table('combos')
                 ->where('combo_id', $combo->combo_id)
                 ->update(['items' => json_encode($items)]);

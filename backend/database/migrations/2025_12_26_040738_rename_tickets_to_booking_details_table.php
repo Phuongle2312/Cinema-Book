@@ -15,7 +15,7 @@ return new class extends Migration
         if (Schema::hasTable('tickets')) {
             // Đổi tên bảng tickets thành booking_details
             Schema::rename('tickets', 'booking_details');
-            
+
             // Đổi tên primary key nếu cần
             Schema::table('booking_details', function (Blueprint $table) {
                 if (Schema::hasColumn('booking_details', 'ticket_id')) {
@@ -37,7 +37,7 @@ return new class extends Migration
                     $table->renameColumn('detail_id', 'ticket_id');
                 }
             });
-            
+
             // Đổi lại tên bảng
             Schema::rename('booking_details', 'tickets');
         }

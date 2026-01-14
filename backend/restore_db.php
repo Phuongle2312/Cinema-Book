@@ -1,7 +1,8 @@
 <?php
-use Illuminate\Support\Facades\DB;
+
 use App\Models\Showtime;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 echo "--- RESTORING DATABASE FROM 123sql.sql ---\n";
 
@@ -32,13 +33,13 @@ foreach ($showtimes as $s) {
     // Keep the original time, just change the date
     // Original might be 2026-01-05 10:00:00
     // New should be 2026-01-08 10:00:00
-    
+
     // Parse original time
     $originalTime = Carbon::parse($s->show_time); // 10:00
-    
+
     $s->show_date = $today;
-    $s->start_time = Carbon::parse($today . ' ' . $originalTime->format('H:i:s'));
-    
+    $s->start_time = Carbon::parse($today.' '.$originalTime->format('H:i:s'));
+
     // Save
     $s->save();
 }

@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 /**
  * Model: Showtime
@@ -13,6 +13,7 @@ use Carbon\Carbon;
 class Showtime extends Model
 {
     use HasFactory;
+
     protected $primaryKey = 'showtime_id';
 
     protected $fillable = [
@@ -49,7 +50,6 @@ class Showtime extends Model
     /**
      * Relationships
      */
-
     public function movie()
     {
         return $this->belongsTo(Movie::class, 'movie_id', 'movie_id');
@@ -73,7 +73,6 @@ class Showtime extends Model
     /**
      * Scopes
      */
-
     public function scopeByMovie($query, $movieId)
     {
         return $query->where('movie_id', $movieId);
@@ -93,6 +92,7 @@ class Showtime extends Model
     {
         $totalSeats = $this->room ? $this->room->total_seats : 0;
         $bookedCount = $this->getBookedSeats()->count();
+
         return ($totalSeats - $bookedCount) > 0;
     }
 
@@ -120,7 +120,7 @@ class Showtime extends Model
         // Chẵn = Phụ Đề Anh, Lẻ = Phụ Đề Việt (giả lập để có dữ liệu 2 tab)
 
         $type = '2D';
-        if ($this->room && !empty($this->room->screen_type)) {
+        if ($this->room && ! empty($this->room->screen_type)) {
             $rawType = $this->room->screen_type;
             if ($rawType === 'standard') {
                 $type = '2D';
@@ -133,7 +133,7 @@ class Showtime extends Model
 
         // Return format string matches Frontend hardcoded tabs
         // "2D Phụ Đề Anh", "2D Phụ Đề Việt"
-        $lang = ($this->showtime_id % 2 == 0) ? "Phụ Đề Anh" : "Phụ Đề Việt";
+        $lang = ($this->showtime_id % 2 == 0) ? 'Phụ Đề Anh' : 'Phụ Đề Việt';
 
         return "$type $lang";
     }

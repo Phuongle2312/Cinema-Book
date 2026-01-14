@@ -1,12 +1,13 @@
 <?php
+
 use App\Models\City;
-use App\Models\Theater;
 use App\Models\Room;
+use App\Models\Theater;
 
 echo "--- LOCATIONS CHECK ---\n";
 
 $cities = City::all();
-echo "Cities Count: " . $cities->count() . "\n";
+echo 'Cities Count: '.$cities->count()."\n";
 foreach ($cities as $c) {
     echo "[$c->city_id] $c->name\n";
     $theaters = Theater::where('city_id', $c->city_id)->get();

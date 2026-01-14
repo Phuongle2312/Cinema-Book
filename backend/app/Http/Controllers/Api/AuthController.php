@@ -4,15 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
-use Carbon\Carbon;
 
 /**
  * Controller: AuthController
@@ -37,7 +36,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -59,7 +58,7 @@ class AuthController extends Controller
                 'user' => $user,
                 'token' => $token,
                 'token_type' => 'Bearer',
-            ]
+            ],
         ], 201);
     }
 
@@ -77,14 +76,14 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        if (! Auth::attempt($request->only('email', 'password'))) {
             return response()->json([
                 'success' => false,
-                'message' => 'Email hoặc mật khẩu không đúng'
+                'message' => 'Email hoặc mật khẩu không đúng',
             ], 401);
         }
 
@@ -98,7 +97,7 @@ class AuthController extends Controller
                 'user' => $user,
                 'token' => $token,
                 'token_type' => 'Bearer',
-            ]
+            ],
         ]);
     }
 
@@ -120,7 +119,7 @@ class AuthController extends Controller
         // Luôn trả về success để đảm bảo client không bị lỗi 401
         return response()->json([
             'success' => true,
-            'message' => 'Đăng xuất thành công'
+            'message' => 'Đăng xuất thành công',
         ]);
     }
 
@@ -132,7 +131,7 @@ class AuthController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => $request->user()
+            'data' => $request->user(),
         ]);
     }
 
@@ -151,7 +150,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -161,7 +160,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Cập nhật thông tin thành công',
-            'data' => $user
+            'data' => $user,
         ]);
     }
 
@@ -185,7 +184,7 @@ class AuthController extends Controller
 
             $user = User::where('email', $googleUser->email)->first();
 
-            if (!$user) {
+            if (! $user) {
                 $user = User::create([
                     'name' => $googleUser->name,
                     'email' => $googleUser->email,
@@ -211,13 +210,13 @@ class AuthController extends Controller
                     'user' => $user,
                     'token' => $token,
                     'token_type' => 'Bearer',
-                ]
+                ],
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Đăng nhập Google thất bại: ' . $e->getMessage()
+                'message' => 'Đăng nhập Google thất bại: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -242,7 +241,7 @@ class AuthController extends Controller
 
             $user = User::where('email', $facebookUser->email)->first();
 
-            if (!$user) {
+            if (! $user) {
                 $user = User::create([
                     'name' => $facebookUser->name,
                     'email' => $facebookUser->email,
@@ -268,13 +267,13 @@ class AuthController extends Controller
                     'user' => $user,
                     'token' => $token,
                     'token_type' => 'Bearer',
-                ]
+                ],
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Đăng nhập Facebook thất bại: ' . $e->getMessage()
+                'message' => 'Đăng nhập Facebook thất bại: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -292,7 +291,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -306,12 +305,12 @@ class AuthController extends Controller
         DB::table('password_reset_tokens')->insert([
             'email' => $request->email,
             'token' => Hash::make($token),
-            'created_at' => now()
+            'created_at' => now(),
         ]);
 
         // Gửi email (giả định - log ra console)
-        \Log::info('Password Reset Token for ' . $request->email . ': ' . $token);
-        \Log::info('Reset URL: ' . url('/reset-password?token=' . $token . '&email=' . $request->email));
+        \Log::info('Password Reset Token for '.$request->email.': '.$token);
+        \Log::info('Reset URL: '.url('/reset-password?token='.$token.'&email='.$request->email));
 
         return response()->json([
             'success' => true,
@@ -335,7 +334,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -344,18 +343,18 @@ class AuthController extends Controller
             ->where('email', $request->email)
             ->first();
 
-        if (!$passwordReset) {
+        if (! $passwordReset) {
             return response()->json([
                 'success' => false,
-                'message' => 'Token không hợp lệ hoặc đã hết hạn'
+                'message' => 'Token không hợp lệ hoặc đã hết hạn',
             ], 400);
         }
 
         // Verify token
-        if (!Hash::check($request->token, $passwordReset->token)) {
+        if (! Hash::check($request->token, $passwordReset->token)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Token không hợp lệ'
+                'message' => 'Token không hợp lệ',
             ], 400);
         }
 
@@ -363,7 +362,7 @@ class AuthController extends Controller
         if (Carbon::parse($passwordReset->created_at)->addMinutes(60)->isPast()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Token đã hết hạn'
+                'message' => 'Token đã hết hạn',
             ], 400);
         }
 
@@ -377,8 +376,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Mật khẩu đã được đặt lại thành công'
+            'message' => 'Mật khẩu đã được đặt lại thành công',
         ]);
     }
 }
-

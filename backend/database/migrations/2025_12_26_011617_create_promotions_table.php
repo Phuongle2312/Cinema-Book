@@ -25,7 +25,7 @@ return new class extends Migration
             $table->integer('current_uses')->default(0)->comment('Số lần đã sử dụng');
             $table->boolean('is_active')->default(true)->comment('Trạng thái kích hoạt');
             $table->timestamps();
-            
+
             $table->index('code');
             $table->index(['valid_from', 'valid_to']);
         });

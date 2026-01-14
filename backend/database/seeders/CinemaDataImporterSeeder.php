@@ -2,14 +2,14 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Movie;
-use App\Models\Genre;
 use App\Models\Cast;
+use App\Models\Genre;
+use App\Models\Movie;
 use App\Models\Promotion;
-use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class CinemaDataImporterSeeder extends Seeder
 {
@@ -82,8 +82,9 @@ class CinemaDataImporterSeeder extends Seeder
                     $durationMinutes += intval($matches[1]);
                 }
             }
-            if ($durationMinutes == 0)
-                $durationMinutes = 120; // Default
+            if ($durationMinutes == 0) {
+                $durationMinutes = 120;
+            } // Default
 
             // Parse status
             $status = 'now_showing';
@@ -111,8 +112,9 @@ class CinemaDataImporterSeeder extends Seeder
             if (isset($data['genres'])) {
                 $genreIds = [];
                 foreach ($data['genres'] as $genreName) {
-                    if (in_array($genreName, ['In Theaters', 'Coming Soon']))
+                    if (in_array($genreName, ['In Theaters', 'Coming Soon'])) {
                         continue;
+                    }
 
                     $genre = Genre::firstOrCreate(
                         ['name' => $genreName],
@@ -127,16 +129,18 @@ class CinemaDataImporterSeeder extends Seeder
             if (isset($data['cast&crew']) && is_array($data['cast&crew'])) {
                 $castIdsWithPivot = [];
                 foreach ($data['cast&crew'] as $index => $person) {
-                    if (isset($person['price']))
+                    if (isset($person['price'])) {
                         continue;
-                    if (!isset($person['name']))
+                    }
+                    if (! isset($person['name'])) {
                         continue;
+                    }
 
                     $cast = Cast::firstOrCreate(
                         ['name' => $person['name']],
                         [
                             'avatar' => $person['img'] ?? null,
-                            'type' => 'actor'
+                            'type' => 'actor',
                         ]
                     );
                     $castIdsWithPivot[$cast->cast_id] = [
@@ -144,7 +148,7 @@ class CinemaDataImporterSeeder extends Seeder
                         'character_name' => '',
                     ];
                 }
-                if (!empty($castIdsWithPivot)) {
+                if (! empty($castIdsWithPivot)) {
                     $movie->cast()->sync($castIdsWithPivot);
                 }
             }
@@ -154,8 +158,9 @@ class CinemaDataImporterSeeder extends Seeder
     private function importEvents()
     {
         $eventsPath = base_path('../frontend/src/data/events.json');
-        if (!File::exists($eventsPath))
+        if (! File::exists($eventsPath)) {
             return;
+        }
 
         $eventsData = json_decode(File::get($eventsPath), true);
 
