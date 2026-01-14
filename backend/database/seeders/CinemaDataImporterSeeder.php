@@ -4,8 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Movie;
-use App\Models\Genre;
-use App\Models\Cast;
+use App\Models\Hashtag;
 use App\Models\Promotion;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -49,7 +48,6 @@ class CinemaDataImporterSeeder extends Seeder
 
         foreach ($bannerData as $item) {
             $title = $item['title'];
-            // For banner data, the 'image' is usually the banner image
             if (isset($item['image'])) {
                 $item['bannerImage'] = $item['image'];
                 unset($item['image']);
@@ -57,7 +55,6 @@ class CinemaDataImporterSeeder extends Seeder
             $combinedMovies[$title] = array_merge($combinedMovies[$title] ?? [], $item);
         }
 
-        // Handle trailer.json
         foreach ($trailerData as $index => $item) {
             $title = null;
             foreach ($moviesData as $m) {
@@ -91,6 +88,22 @@ class CinemaDataImporterSeeder extends Seeder
                 $status = 'coming_soon';
             }
 
+            // Flatten Cast & Crew
+            $actors = [];
+            $directors = [];
+            if (isset($data['cast&crew']) && is_array($data['cast&crew'])) {
+                foreach ($data['cast&crew'] as $person) {
+                    if (!isset($person['name'])) continue;
+                    // Simplistic heuristic: if mostly appearing as Director or based on role
+                    // Since JSON structure varies, we'll just put everyone in Actor for now or specific if role exists
+                    // Assuming 'role' field exists or we just dump names.
+                    // Checking implementation of details.json usually has mixed data.
+                    // For now, let's just take names.
+                    $actors[] = $person['name'];
+                }
+            }
+            $actorString = implode(', ', array_slice($actors, 0, 5)); // Take top 5
+            
             $movie = Movie::updateOrCreate(
                 ['title' => $title],
                 [
@@ -104,49 +117,25 @@ class CinemaDataImporterSeeder extends Seeder
                     'status' => $status,
                     'rating' => $data['rating'] ?? 0,
                     'is_featured' => true,
+                    'actor' => $actorString,
+                    'director' => 'Unknown', // Placeholder as JSON often lacks clear director key in cast&crew list for this format
                 ]
             );
 
-            // Handle Genres
+            // Handle Genres via Hashtags
             if (isset($data['genres'])) {
-                $genreIds = [];
+                $hashtagIds = [];
                 foreach ($data['genres'] as $genreName) {
                     if (in_array($genreName, ['In Theaters', 'Coming Soon']))
                         continue;
 
-                    $genre = Genre::firstOrCreate(
+                    $hashtag = Hashtag::firstOrCreate(
                         ['name' => $genreName],
-                        ['slug' => Str::slug($genreName)]
+                        ['type' => 'genre']
                     );
-                    $genreIds[] = $genre->genre_id;
+                    $hashtagIds[] = $hashtag->hashtag_id;
                 }
-                $movie->genres()->sync($genreIds);
-            }
-
-            // Handle Cast & Crew
-            if (isset($data['cast&crew']) && is_array($data['cast&crew'])) {
-                $castIdsWithPivot = [];
-                foreach ($data['cast&crew'] as $index => $person) {
-                    if (isset($person['price']))
-                        continue;
-                    if (!isset($person['name']))
-                        continue;
-
-                    $cast = Cast::firstOrCreate(
-                        ['name' => $person['name']],
-                        [
-                            'avatar' => $person['img'] ?? null,
-                            'type' => 'actor'
-                        ]
-                    );
-                    $castIdsWithPivot[$cast->cast_id] = [
-                        'role' => 'actor',
-                        'character_name' => '',
-                    ];
-                }
-                if (!empty($castIdsWithPivot)) {
-                    $movie->cast()->sync($castIdsWithPivot);
-                }
+                $movie->hashtags()->sync($hashtagIds);
             }
         }
     }

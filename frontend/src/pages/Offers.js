@@ -41,10 +41,6 @@ const Offers = () => {
                                     </div>
                                     <h3 className="promo-title">{offer.title}</h3>
                                     <p className="promo-description">{offer.description}</p>
-                                    <button className="promo-btn" onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate(`/promotion/${offer.id}`);
-                                    }}>Get Offer</button>
                                 </div>
                             </div>
                         ))

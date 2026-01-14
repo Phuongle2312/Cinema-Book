@@ -41,12 +41,12 @@ const Home = () => {
             {/* Cinematic Banner */}
             <Banner />
 
-            {/* Movies Grid */}
+            {/* Now Showing Section */}
             <section className="movies-section container">
                 <div className="section-header">
                     <h2 className="section-title">Now Showing</h2>
-                    <a href="/movies" className="view-all">
-                        View All
+                    <a href="/movies?status=now_showing" className="view-all">
+                        View All ({movies.filter(m => m.status === 'now_showing').length})
                         <ChevronRight size={18} />
                     </a>
                 </div>
@@ -62,11 +62,12 @@ const Home = () => {
                     </div>
                 ) : (
                     <div className="movies-grid">
-                        {movies.slice(0, 5).map(movie => (
+                        {movies.filter(m => m.status === 'now_showing').slice(0, 5).map(movie => (
                             <MovieCard
                                 key={movie.movie_id}
                                 movie={{
                                     id: movie.movie_id,
+                                    slug: movie.slug,
                                     title: movie.title,
                                     poster: movie.poster_url || movie.image,
                                     rating: parseFloat(movie.rating) || 0,
@@ -79,6 +80,9 @@ const Home = () => {
                     </div>
                 )}
             </section>
+
+            {/* Coming Soon Section */}
+
 
             {/* Offers Section */}
             <section className="events-section container">
@@ -107,10 +111,6 @@ const Home = () => {
                                 </div>
                                 <h3 className="event-title">{offer.title}</h3>
                                 <p className="event-description">{offer.description}</p>
-                                <button className="event-btn" onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/promotion/${offer.id}`);
-                                }}>Get Offer</button>
                             </div>
                         </div>
                     ))}
@@ -155,7 +155,7 @@ const Home = () => {
             </section>
 
             <Footer />
-        </div>
+        </div >
     );
 };
 

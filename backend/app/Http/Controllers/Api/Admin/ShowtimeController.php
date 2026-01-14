@@ -134,7 +134,11 @@ class ShowtimeController extends Controller
         try {
             $showtime = Showtime::create($request->all());
 
-            // Tự động tạo seats cho showtime này dựa trên room
+            // Tự động tạo seats cho showtime này dựa trên room - REMOVED
+            // Logic hiện tại dùng bảng seat_locks và booking_details để quản lý trạng thái ghế
+            // Không cần copy ghế từ rooms sang bảng trung gian cho mỗi showtime nữa.
+
+            /*
             $roomSeats = Seat::where('room_id', $request->room_id)->get();
             
             foreach ($roomSeats as $seat) {
@@ -143,6 +147,7 @@ class ShowtimeController extends Controller
                     'is_available' => true,
                 ]);
             }
+            */
 
             DB::commit();
 

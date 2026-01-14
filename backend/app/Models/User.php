@@ -28,7 +28,6 @@ class User extends Authenticatable
         'role',
         'provider',        // google, facebook
         'provider_id',     // ID từ provider
-        'avatar',          // URL avatar
     ];
 
     /**
@@ -61,10 +60,16 @@ class User extends Authenticatable
         return $this->hasMany(Booking::class);
     }
 
-    // Một user có nhiều reviews
-    public function reviews()
+    // Một user có nhiều wishlists (thay thế reviews)
+    public function wishlists()
     {
-        return $this->hasMany(Review::class);
+        return $this->hasMany(Wishlist::class);
+    }
+
+    // Một user có nhiều payment verifications
+    public function paymentVerifications()
+    {
+        return $this->hasMany(PaymentVerification::class);
     }
 
     // Một user có nhiều notifications

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { usePopup } from '../context/PopupContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -12,6 +13,8 @@ const PromotionDetails = () => {
     const [promotion, setPromotion] = useState(null);
     const [actionState, setActionState] = useState({ loading: false, completed: false });
 
+    const { showSuccess } = usePopup();
+
     const handleAction = () => {
         setActionState({ loading: true, completed: false });
 
@@ -21,9 +24,15 @@ const PromotionDetails = () => {
 
             if (promotion.type === 'offer') {
                 const realCode = promotion.title.toUpperCase().replace(/[^A-Z0-9]/g, '_');
-                alert(`Offer Claimed Successfully!\n\nYour Code: ${realCode}\n\nUse this code at the checkout page to get your discount.`);
+                showSuccess(
+                    `Your Code: ${realCode}\n\nUse this code at the checkout page to get your discount.`,
+                    'Offer Claimed Successfully!'
+                );
             } else {
-                alert("Registration Successful!\n\nWe have sent a confirmation email to your inbox.");
+                showSuccess(
+                    "We have sent a confirmation email to your inbox.",
+                    "Registration Successful!"
+                );
             }
         }, 1500);
     };
@@ -99,25 +108,7 @@ const PromotionDetails = () => {
                         </ul>
                     </div>
 
-                    <div className="sidebar-actions">
-                        <div className="action-card">
-                            <h3>Interested?</h3>
-                            <p>Don't miss out on this limited time {promotion.type}.</p>
-                            <button
-                                className={`primary-btn ${actionState.completed ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                onClick={handleAction}
-                                disabled={actionState.loading || actionState.completed}
-                            >
-                                {actionState.loading ? 'Processing...' : (
-                                    actionState.completed ? (promotion.type === 'offer' ? 'Claimed' : 'Registered') : (promotion.type === 'offer' ? 'Claim Offer' : 'Register Now')
-                                )}
-                            </button>
-                            <button className="secondary-btn">
-                                <Share2 size={18} />
-                                Share
-                            </button>
-                        </div>
-                    </div>
+
                 </div>
             </div>
 

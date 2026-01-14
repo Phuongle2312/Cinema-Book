@@ -13,6 +13,7 @@ use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Services\PricingService;
 
 /**
  * BookingController
@@ -20,9 +21,66 @@ use Carbon\Carbon;
  */
 class BookingController extends Controller
 {
+    protected $pricingService;
+
+    public function __construct(PricingService $pricingService)
+    {
+        $this->pricingService = $pricingService;
+    }
+
+    /**
+     * POST /api/bookings/hold
+     * Giữ ghế tạm thời (Phase 2)
+     */
+    public function hold(Request $request)
+    {
+        $request->validate([
+            'showtime_id' => 'required|exists:showtimes,showtime_id',
+            'seat_ids' => 'required|array|min:1',
+            'seat_ids.*' => 'exists:seats,seat_id',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $user = $request->user();
+            $showtimeId = $request->showtime_id;
+            $seatIds = $request->seat_ids;
+
+            // 1. Validate: Ghế phải trống (chưa book, chưa lock bởi AI)
+            // Nếu lock bởi chính mình thì gia hạn (update expires_at)
+            $this->validateSeatsForHold($showtimeId, $seatIds, $user->id);
+
+            // 2. Tạo hoặc update SeatLock
+            // Xóa lock cũ của chính user này cho các ghế đó (nếu có) để tạo mới cho sạch, hoặc update
+            // Ở đây ta xóa lock cũ của user cho ghế này để tạo lock mới
+            SeatLock::where('showtime_id', $showtimeId)
+                ->where('user_id', $user->id)
+                ->whereIn('seat_id', $seatIds)
+                ->delete();
+
+            $this->createSeatLocks($user->id, $seatIds, $showtimeId);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Giữ ghế thành công.',
+                'expires_at' => Carbon::now()->addMinutes(config('app.seat_lock_timeout', 6))->toISOString(),
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể giữ ghế: ' . $e->getMessage()
+            ], 400);
+        }
+    }
+
     /**
      * POST /api/bookings
-     * Tạo đơn đặt vé mới (khóa ghế trong 6 phút)
+     * Tạo đơn đặt vé mới từ các ghế đã hold (Phase 3)
      */
     public function store(Request $request)
     {
@@ -39,11 +97,20 @@ class BookingController extends Controller
             DB::beginTransaction();
 
             $user = $request->user();
-            $showtime = Showtime::with('movie')->findOrFail($request->showtime_id);
+            \Log::info('Booking store attempt', ['user' => $user->id, 'showtime_id' => $request->showtime_id, 'seats' => $request->seat_ids]);
+            $showtime = Showtime::with(['movie', 'room'])->findOrFail($request->showtime_id);
             $seatIds = $request->seat_ids;
 
-            // 1. Kiểm tra ghế có available không
-            $this->validateSeatsAvailability($showtime->showtime_id, $seatIds);
+            // 1. Kiểm tra User có đang giữ lock cho các ghế này không
+            // 1. Kiểm tra User có đang giữ lock cho các ghế này không. 
+            // Nếu chưa, thử hold luôn (tiện cho frontend).
+            try {
+                $this->validateLocksOwnership($showtime->showtime_id, $seatIds, $user->id);
+            } catch (\Exception $e) {
+                // Thử hold ngay lúc này nếu ghế vẫn trống
+                $this->validateSeatsForHold($showtime->showtime_id, $seatIds, $user->id);
+                $this->createSeatLocks($user->id, $seatIds, $showtime->showtime_id);
+            }
 
             // 2. Tạo booking
             $booking = Booking::create([
@@ -51,26 +118,35 @@ class BookingController extends Controller
                 'showtime_id' => $showtime->showtime_id,
                 'booking_code' => $this->generateBookingCode(),
                 'total_seats' => count($seatIds),
-                'seats_total' => 0, // Sẽ tính sau
-                'combo_total' => 0, // Sẽ tính sau
-                'total_price' => 0, // Sẽ tính sau
+                'seats_total' => 0, // Tính lại bằng service
+                'combo_total' => 0,
+                'total_price' => 0,
                 'status' => 'pending',
-                'expires_at' => Carbon::now()->addMinutes(6),
+                // Expires theo logic booking (có thể giống hoặc dài hơn lock)
+                'expires_at' => Carbon::now()->addMinutes(config('app.seat_lock_timeout', 6)), 
             ]);
 
-            // 3. Tạo chi tiết đặt vé và tính tổng tiền ghế
-            $seatsTotal = $this->createBookingDetails($booking, $seatIds, $showtime);
+            // 3. Sử dụng PricingService để tạo chi tiết và tính tiền
+            $seatsTotal = $this->createBookingDetailsWithService($booking, $seatIds, $showtime);
 
-            // 4. Tạo seat locks (khóa ghế trong 6 phút)
-            $this->createSeatLocks($user->id, $seatIds, $showtime->showtime_id);
-
-            // 5. Xử lý combos nếu có
+            // 4. Xử lý combos (dùng service)
             $comboTotal = 0;
             if ($request->has('combos')) {
+                // Map request combos to format service needs or just calculate
+                // Ở đây ta chưa refactor BookingCombos logic vào Service hoàn toàn để create DB records, 
+                // nhưng ta dùng Service để tính tiền.
+                // Tuy nhiên, logic tạo record booking_combos vẫn cần thiết.
+                // Ta vẫn giữ logic cũ nhưng dùng Service check giá nếu cần.
                 $comboTotal = $this->addCombosToBooking($booking, $request->combos);
+                
+                // Validate giá với Service (Optional, để đảm bảo consistency)
+                // $serviceComboTotal = $this->pricingService->calculateCombosTotal($request->combos);
             }
 
-            // 6. Cập nhật tổng tiền
+            // 5. Cập nhật tổng tiền vào Booking
+            // Tái sử dụng method tính tổng của service cho chắc chắn (nếu muốn)
+            // $finalTotal = $seatsTotal + $comboTotal;
+            
             $booking->update([
                 'seats_total' => $seatsTotal,
                 'combo_total' => $comboTotal,
@@ -79,22 +155,27 @@ class BookingController extends Controller
 
             DB::commit();
 
-            // Load relationships để trả về
+            // Load relationships
             $booking->load(['seats', 'combos', 'showtime.movie', 'showtime.room.theater']);
+
+            \Log::info('Booking created successfully', ['booking_id' => $booking->booking_id]);
+            
+            // Thêm id dự phòng cho frontend
+            $booking->id = $booking->booking_id;
 
             return response()->json([
                 'success' => true,
-                'message' => 'Đặt vé thành công. Vui lòng thanh toán trong 6 phút.',
+                'message' => 'Đơn hàng đã được tạo. Vui lòng thanh toán.',
                 'data' => $booking,
                 'expires_at' => $booking->expires_at->toISOString(),
-                'remaining_seconds' => $booking->expires_at->diffInSeconds(now())
             ], 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Booking store error', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Đặt vé thất bại: ' . $e->getMessage()
+                'message' => 'Lỗi tạo booking: ' . $e->getMessage()
             ], 400);
         }
     }
@@ -319,11 +400,12 @@ class BookingController extends Controller
     // ==================== HELPER METHODS ====================
 
     /**
-     * Kiểm tra ghế có available không
+     * Validate ghế cho actions Hold
+     * Ghế phải không bị Booked, và không bị Locked bởi người khác.
      */
-    private function validateSeatsAvailability($showtimeId, $seatIds)
+    private function validateSeatsForHold($showtimeId, $seatIds, $userId)
     {
-        // Kiểm tra ghế đã được đặt (Confirmed) hoặc đang chờ thanh toán (Pending + Chưa hết hạn)
+        // 1. Check Booking (Confirmed or Pending valid)
         $bookedSeats = BookingDetail::whereHas('booking', function ($query) use ($showtimeId) {
             $query->where('showtime_id', $showtimeId)
                 ->where(function ($q) {
@@ -333,44 +415,65 @@ class BookingController extends Controller
                                 ->where('expires_at', '>', Carbon::now());
                         });
                 });
-        })->whereIn('seat_id', $seatIds)->count();
+        })->whereIn('seat_id', $seatIds)->exists();
 
-        if ($bookedSeats > 0) {
-            throw new \Exception('Một số ghế đã được đặt');
+        if ($bookedSeats) {
+            throw new \Exception('Một số ghế đã được đặt.');
         }
 
-        // Kiểm tra ghế đang bị lock
-        $lockedSeats = SeatLock::where('showtime_id', $showtimeId)
+        // 2. Check Lock (Locked by others)
+        // Nếu locked bởi chính userId này -> OK (cho phép gia hạn/giữ lại)
+        $lockedByOthers = SeatLock::where('showtime_id', $showtimeId)
             ->whereIn('seat_id', $seatIds)
+            ->where('user_id', '!=', $userId) // Khác user
             ->where('expires_at', '>', Carbon::now())
-            ->count();
+            ->exists();
 
-        if ($lockedSeats > 0) {
-            throw new \Exception('Một số ghế đang được giữ bởi người khác');
+        if ($lockedByOthers) {
+            throw new \Exception('Một số ghế đang được giữ bởi người khác.');
         }
     }
 
     /**
-     * Tạo chi tiết đặt vé (BookingDetail)
+     * Validate ownership của Locks trước khi Booking
+     * User phải đang lock những ghế này.
      */
-    private function createBookingDetails($booking, $seatIds, $showtime)
+    private function validateLocksOwnership($showtimeId, $seatIds, $userId)
+    {
+        // Kiểm tra xem tất cả seat_ids có nằm trong seat_locks của user này cho showtime này không
+        $lockedCount = SeatLock::where('showtime_id', $showtimeId)
+            ->where('user_id', $userId)
+            ->whereIn('seat_id', $seatIds)
+            ->where('expires_at', '>', Carbon::now())
+            ->count();
+        
+        // Nếu số lượng lock của user < tổng số ghế yêu cầu -> có ghế chưa lock hoặc hết hạn
+        if ($lockedCount < count($seatIds)) {
+             throw new \Exception('Bạn chưa giữ ghế hoặc thời gian giữ ghế đã hết. Vui lòng chọn lại.');
+        }
+    }
+
+
+    /**
+     * Tạo chi tiết đặt vé (BookingDetail) dùng PricingService
+     */
+    private function createBookingDetailsWithService($booking, $seatIds, $showtime)
     {
         $total = 0;
-        $moviePrice = $showtime->movie->base_price ?? 0; // Lấy giá gốc từ phim
         $seats = Seat::whereIn('seat_id', $seatIds)->get();
 
         foreach ($seats as $seat) {
-            // Phụ thu ghế (VIP, Couple, v.v.)
-            $seatSurcharge = $seat->extra_price ?? 0;
-
-            // Công thức: Giá phim + Phụ thu ghế
-            $ticketPrice = $moviePrice + $seatSurcharge;
+            // Sử dụng PricingService để tính giá
+            $ticketPrice = $this->pricingService->calculateTicketPrice($showtime, $seat);
 
             BookingDetail::create([
                 'booking_id' => $booking->booking_id,
                 'seat_id' => $seat->seat_id,
                 'showtime_id' => $showtime->showtime_id,
-                'price' => $ticketPrice,
+                'ticket_code' => $booking->booking_code . '-' . $seat->seat_code,
+                'base_price' => $showtime->base_price ?? 100000,
+                'seat_extra_price' => $seat->extra_price ?? 0,
+                'final_price' => $ticketPrice,
             ]);
 
             $total += $ticketPrice;

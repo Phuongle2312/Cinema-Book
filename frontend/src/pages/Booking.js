@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { usePopup } from '../context/PopupContext';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Calendar, Clock, MapPin, Loader2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
@@ -10,7 +11,7 @@ import bookingService from '../services/bookingService';
 import './Booking.css';
 
 const Booking = () => {
-    const { movieId } = useParams();
+    const { slug } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
     const { isAuthenticated } = useAuth();
@@ -57,22 +58,24 @@ const Booking = () => {
     useEffect(() => {
         const fetchMovie = async () => {
             try {
-                const data = await movieService.getMovieById(movieId);
+                const data = await movieService.getMovieById(slug);
                 setMovie(data.data || data);
             } catch (err) {
                 setError("Failed to load movie details.");
             }
         };
         fetchMovie();
-    }, [movieId]);
+    }, [slug]);
 
-    // 2. Fetch Showtimes when Date changes
+    // 2. Fetch Showtimes when Date changes and Movie is loaded
     useEffect(() => {
         const fetchShowtimes = async () => {
+            if (!movie?.movie_id) return; // Wait for movie to be loaded
+
             try {
                 setLoading(true);
                 const data = await showtimeService.getShowtimes({
-                    movie_id: movieId,
+                    movie_id: movie.movie_id,
                     date: selectedDate
                 });
                 setAllShowtimes(data.data || []);
@@ -83,10 +86,8 @@ const Booking = () => {
             }
         };
 
-        if (movieId) {
-            fetchShowtimes();
-        }
-    }, [movieId, selectedDate]);
+        fetchShowtimes();
+    }, [movie, selectedDate]);
 
     // 2.1 Auto-select City property
     useEffect(() => {
@@ -123,6 +124,8 @@ const Booking = () => {
         }, {});
     }, [allShowtimes, selectedCity, selectedFormat]);
 
+    const { showWarning, showError } = usePopup();
+
     // 3. Fetch Seats when Showtime selected
     const handleShowtimeSelect = async (showtime) => {
         try {
@@ -134,7 +137,7 @@ const Booking = () => {
             setSeats(data.data?.seats || []);
             setSeatMap(data.data?.seat_map || {});
         } catch (err) {
-            alert("Failed to load seat map.");
+            showError("Failed to load seat map.");
         } finally {
             setLoadingSeats(false);
         }
@@ -148,20 +151,38 @@ const Booking = () => {
     const handleSeatClick = (seat) => {
         if (seat.status === 'booked' || seat.status === 'locked') return;
 
-        // COUPLE SEAT LOGIC (Row H)
-        if (seat.row === 'H') {
+        // Get seat type (normalize to lowercase)
+        const seatType = (seat.type || seat.seat_type || 'standard').toLowerCase();
+
+        // CHECK: If already have selected seats, must be same type
+        if (selectedSeats.length > 0) {
+            const firstSelectedType = (selectedSeats[0].type || selectedSeats[0].seat_type || 'standard').toLowerCase();
+
+            // Check if deselecting current seat
+            const isCurrentSelected = selectedSeats.some(s => s.seat_id === seat.seat_id);
+
+            // Only block if selecting NEW seat of different type
+            if (!isCurrentSelected && seatType !== firstSelectedType) {
+                showWarning(`You can only select ${firstSelectedType.toUpperCase()} seats. Please deselect current seats first to choose a different type.`);
+                return;
+            }
+        }
+
+        // COUPLE SEAT LOGIC
+        if (seatType === 'couple') {
             const seatNum = parseInt(seat.number);
-            // Pairs: (1,2), (3,4), (5,6), (7,8), (9,10)
+            // Pairs: (1,2), (3,4), (5,6), (7,8), (9,10), (11,12)
+            // If odd, partner is +1. If even, partner is -1.
             const partnerNum = seatNum % 2 !== 0 ? seatNum + 1 : seatNum - 1;
 
-            // Find partner seat in the full 'seats' list
-            const partnerSeat = seats.find(s => s.row === 'H' && parseInt(s.number) === partnerNum);
+            // Find partner seat in the full 'seats' list matching the SAME ROW
+            const partnerSeat = seats.find(s => s.row === seat.row && parseInt(s.number) === partnerNum);
 
             if (!partnerSeat) return; // Should not happen if data is correct
 
             // Check if partner is available
             if (partnerSeat.status === 'booked' || partnerSeat.status === 'locked') {
-                alert("Cannot select this seat because its partner is unavailable.");
+                showWarning("Cannot select this seat because its partner is unavailable.");
                 return;
             }
 
@@ -173,7 +194,7 @@ const Booking = () => {
             } else {
                 // Select both
                 if (selectedSeats.length + 2 > 8) {
-                    alert("You can only select up to 8 seats.");
+                    showWarning("You can only select up to 8 seats.");
                     return;
                 }
                 setSelectedSeats(prev => [...prev, seat, partnerSeat]);
@@ -181,7 +202,7 @@ const Booking = () => {
             return;
         }
 
-        // STANDARD SEAT LOGIC
+        // STANDARD / VIP SEAT LOGIC
         const isSelected = selectedSeats.some(s => s.seat_id === seat.seat_id);
 
         if (isSelected) {
@@ -189,12 +210,13 @@ const Booking = () => {
         } else {
             // Limit max 8 seats
             if (selectedSeats.length >= 8) {
-                alert("You can only select up to 8 seats.");
+                showWarning("You can only select up to 8 seats.");
                 return;
             }
             setSelectedSeats(prev => [...prev, seat]);
         }
     };
+
 
     const calculateTotal = () => {
         if (!selectedShowtime) return 0;
@@ -208,7 +230,7 @@ const Booking = () => {
         if (selectedSeats.length === 0) return;
 
         if (!isAuthenticated) {
-            alert("Please login to book tickets.");
+            showWarning("Please login to book tickets.");
             navigate('/login', { state: { from: location } });
             return;
         }
@@ -225,12 +247,18 @@ const Booking = () => {
             const response = await bookingService.createBooking(bookingData);
 
             if (response.success) {
-                navigate(`/payment/${response.data.booking_id}`);
+                const bId = response.data.booking_id || response.data.id;
+                if (bId) {
+                    navigate(`/payment/${bId}`);
+                } else {
+                    console.error("Booking created but ID missing:", response.data);
+                    showError("Booking created but failed to navigate to payment. Please check your profile.");
+                }
             } else {
-                alert(response.message || "Booking failed");
+                showError(response.message || "Booking failed");
             }
         } catch (err) {
-            alert("An error occurred. Please try again.");
+            showError("An error occurred. Please try again.");
         } finally {
             setBookingLoading(false);
         }
@@ -359,7 +387,7 @@ const Booking = () => {
                                         if (selectedSeats.some(s => s.seat_id === seat.seat_id)) statusClass = 'selected';
 
                                         // Specific types - backend sends string 'standard', 'vip', 'couple'
-                                        const type = (seat.type || '').toLowerCase();
+                                        const type = (seat.seat_type || seat.type || '').toLowerCase();
                                         if (type === 'vip') statusClass += ' vip';
                                         else if (type === 'couple') statusClass += ' couple';
                                         else statusClass += ' standard';
@@ -373,7 +401,7 @@ const Booking = () => {
                                                 onClick={() => handleSeatClick(seat)}
                                                 title={`${seat.row}${seat.number} - ${typeName} - ${parseInt(seat.extra_price || 0) + parseFloat(selectedShowtime.base_price)} VND`}
                                                 style={{
-                                                    marginRight: (seat.row === 'H' && seat.number % 2 === 0 && seat.number !== 10) ? '20px' : '0'
+                                                    marginRight: (type === 'couple' && seat.number % 2 === 0 && seat.number !== 12) ? '20px' : '0'
                                                 }}
                                             >
                                                 {/* Optional: Show seat number only on hover or selection */}

@@ -80,8 +80,8 @@ class Booking extends Model
     // Booking có nhiều ghế (through booking_details)
     public function seats()
     {
-        return $this->belongsToMany(Seat::class, 'booking_seats', 'booking_id', 'seat_id')
-            ->withPivot('price')
+        return $this->belongsToMany(Seat::class, 'booking_details', 'booking_id', 'seat_id')
+            ->withPivot('final_price')
             ->withTimestamps();
     }
 
@@ -115,10 +115,10 @@ class Booking extends Model
         return $this->hasMany(BookingCombo::class, 'booking_id', 'booking_id');
     }
 
-    // Booking có thể có một review
-    public function review()
+    // Booking có thể có một payment verification
+    public function paymentVerification()
     {
-        return $this->hasOne(Review::class, 'booking_id', 'booking_id');
+        return $this->hasOne(PaymentVerification::class, 'booking_id', 'booking_id');
     }
 
     /**

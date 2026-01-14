@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { usePopup } from '../context/PopupContext';
 import { Play, Heart, Info, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import './Banner.css';
 import bannerData from '../data/banner.json';
@@ -27,11 +28,13 @@ const Banner = () => {
         return () => clearInterval(timer);
     }, [showTrailer]);
 
+    const { showInfo } = usePopup();
+
     const handlePlayClick = () => {
         if (currentTrailerUrl) {
             setShowTrailer(true);
         } else {
-            alert("Trailer not available");
+            showInfo("Trailer not available");
         }
     };
 

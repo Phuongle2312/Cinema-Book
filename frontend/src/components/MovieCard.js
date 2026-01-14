@@ -6,8 +6,12 @@ import './MovieCard.css';
 const MovieCard = ({ movie }) => {
     return (
         <div className="movie-card">
-            <Link to={`/movies/${movie.id}`} className="movie-poster">
-                <img src={movie.poster} alt={movie.title} />
+            <Link to={`/movies/${movie.slug || movie.id}`} className="movie-poster">
+                <img
+                    src={movie.poster || "https://via.placeholder.com/300x450?text=No+Poster"}
+                    alt={movie.title}
+                    onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/300x450?text=No+Poster"; }}
+                />
                 <div className="movie-overlay">
                     <button className="btn-play-overlay">
                         <Play fill="black" size={24} color="black" />
@@ -22,7 +26,7 @@ const MovieCard = ({ movie }) => {
                 </div>
             </Link>
             <div className="movie-details">
-                <Link to={`/movies/${movie.id}`}>
+                <Link to={`/movies/${movie.slug || movie.id}`}>
                     <h3 className="movie-title">{movie.title}</h3>
                 </Link>
                 <div className="movie-meta">
@@ -36,7 +40,7 @@ const MovieCard = ({ movie }) => {
                         {movie.year}
                     </span>
                 </div>
-                <Link to={`/booking/movie/${movie.id}`} className="btn-book">Book Now</Link>
+                <Link to={`/booking/movie/${movie.slug || movie.id}`} className="btn-book">Book Now</Link>
             </div>
         </div>
     );

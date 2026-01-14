@@ -18,8 +18,10 @@ class Seat extends Model
         'room_id',
         'row',
         'number',
-        'type',
+        'seat_code',
+        'seat_type',
         'extra_price',
+        'is_available',
     ];
 
     /**
@@ -33,8 +35,8 @@ class Seat extends Model
 
     public function bookings()
     {
-        return $this->belongsToMany(Booking::class, 'booking_seats', 'seat_id', 'booking_id')
-            ->withPivot('price')
+        return $this->belongsToMany(Booking::class, 'booking_details', 'seat_id', 'booking_id')
+            ->withPivot('final_price')
             ->withTimestamps();
     }
 
@@ -49,6 +51,6 @@ class Seat extends Model
 
     public function scopeByType($query, $type)
     {
-        return $query->where('type', $type);
+        return $query->where('seat_type', $type);
     }
 }

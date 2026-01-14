@@ -3,13 +3,14 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import theaterService from '../services/theaterService';
 import './Cinemas.css';
-import { MapPin, Loader2, Navigation, Phone, Info } from 'lucide-react';
+import { MapPin, Loader2, Navigation, Phone, Info, Mail, Clock, X } from 'lucide-react';
 
 const Cinemas = () => {
     const [theaters, setTheaters] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedCity, setSelectedCity] = useState("Hồ Chí Minh");
+    const [selectedTheater, setSelectedTheater] = useState(null);
 
     const cities = ["Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "Cần Thơ", "Đồng Nai", "Hải Phòng", "Quảng Ninh"];
 
@@ -18,7 +19,7 @@ const Cinemas = () => {
             try {
                 setLoading(true);
                 const data = await theaterService.getTheaters();
-                setTheaters(data.data || data); // Adjust based on API structure
+                setTheaters(data.data || data);
             } catch (err) {
                 console.error("Failed to fetch theaters:", err);
                 setError("Unable to load cinemas at this time.");
@@ -32,6 +33,14 @@ const Cinemas = () => {
 
     // Filter theaters by city
     const filteredTheaters = theaters.filter(theater => theater.city?.name === selectedCity);
+
+    const openDetails = (theater) => {
+        setSelectedTheater(theater);
+    };
+
+    const closeDetails = () => {
+        setSelectedTheater(null);
+    };
 
     return (
         <div className="cinemas-page">
@@ -75,7 +84,6 @@ const Cinemas = () => {
                                 {filteredTheaters.map(theater => (
                                     <div key={theater.theater_id} className="theater-card">
                                         <div className="theater-image">
-                                            {/* Generic Theater Image - Placeholder */}
                                             <img
                                                 src="https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=2070&auto=format&fit=crop"
                                                 alt={theater.name}
@@ -85,24 +93,8 @@ const Cinemas = () => {
                                         <div className="theater-info">
                                             <h3>{theater.name}</h3>
 
-                                            <div className="theater-meta">
-                                                <div className="meta-item">
-                                                    <MapPin size={16} className="text-primary" />
-                                                    <span>{theater.address}</span>
-                                                </div>
-                                            </div>
-
                                             <div className="theater-actions">
-                                                <a
-                                                    href={`https://maps.google.com/?q=${encodeURIComponent(theater.name + ' ' + theater.address)}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="btn-map"
-                                                >
-                                                    <Navigation size={16} />
-                                                    Get Directions
-                                                </a>
-                                                <button className="btn-details">
+                                                <button className="btn-details" onClick={() => openDetails(theater)}>
                                                     <Info size={16} />
                                                     Details
                                                 </button>
@@ -119,6 +111,74 @@ const Cinemas = () => {
                     </div>
                 )}
             </div>
+
+            {/* Theater Details Modal */}
+            {selectedTheater && (
+                <div className="theater-modal-overlay" onClick={closeDetails}>
+                    <div className="theater-modal" onClick={(e) => e.stopPropagation()}>
+                        <button className="modal-close" onClick={closeDetails}>
+                            <X size={24} />
+                        </button>
+
+                        <div className="modal-header">
+                            <img
+                                src="https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=2070&auto=format&fit=crop"
+                                alt={selectedTheater.name}
+                            />
+                            <div className="modal-title">
+                                <h2>{selectedTheater.name}</h2>
+                                <span className="modal-city">{selectedTheater.city?.name}</span>
+                            </div>
+                        </div>
+
+                        <div className="modal-body">
+                            <div className="detail-item">
+                                <MapPin size={20} className="detail-icon" />
+                                <div>
+                                    <strong>Address</strong>
+                                    <p>{selectedTheater.address || '123 Example Street, ' + selectedTheater.city?.name}</p>
+                                </div>
+                            </div>
+
+                            <div className="detail-item">
+                                <Phone size={20} className="detail-icon" />
+                                <div>
+                                    <strong>Phone</strong>
+                                    <p>{selectedTheater.phone || '1900-6017'}</p>
+                                </div>
+                            </div>
+
+                            <div className="detail-item">
+                                <Mail size={20} className="detail-icon" />
+                                <div>
+                                    <strong>Email</strong>
+                                    <p>contact@cinebook.vn</p>
+                                </div>
+                            </div>
+
+                            <div className="detail-item">
+                                <Clock size={20} className="detail-icon" />
+                                <div>
+                                    <strong>Opening Hours</strong>
+                                    <p>Daily: 9:00 AM - 11:00 PM</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="modal-footer">
+                            <a
+                                href={`https://maps.google.com/?q=${encodeURIComponent(selectedTheater.name)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn-primary"
+                            >
+                                <Navigation size={16} />
+                                Get Directions
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <Footer />
         </div>

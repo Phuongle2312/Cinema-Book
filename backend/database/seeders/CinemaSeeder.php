@@ -126,9 +126,12 @@ class CinemaSeeder extends Seeder
             for ($col = 1; $col <= $colsInRow; $col++) {
                 $type = 'standard';
 
-                if (in_array($row, ['D', 'E', 'F', 'G'])) {
+                if (in_array($row, ['A', 'B', 'C'])) {
+                    $type = 'standard';
+                } elseif (in_array($row, ['D', 'E', 'F', 'G'])) {
                     $type = 'vip';
-                } elseif ($row === 'H') {
+                } else {
+                    // H...
                     $type = 'couple';
                 }
 

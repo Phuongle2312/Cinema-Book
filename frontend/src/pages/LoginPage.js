@@ -26,8 +26,14 @@ const LoginPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await login(formData.email, formData.password);
-            navigate(from, { replace: true });
+            const response = await login(formData.email, formData.password);
+            const user = response?.data?.user || response?.data;
+
+            if (user?.role === 'admin') {
+                navigate('/admin', { replace: true });
+            } else {
+                navigate(from, { replace: true });
+            }
         } catch (err) {
             setError(err.message || 'Login failed. Please check your credentials.');
         }

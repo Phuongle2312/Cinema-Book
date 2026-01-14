@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { CheckCircle, Share2, Download, Printer } from 'lucide-react';
+import { CheckCircle, Share2, Download, Printer, Loader2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import bookingService from '../services/bookingService';
 import './BookingSuccess.css';
@@ -8,36 +8,129 @@ import './BookingSuccess.css';
 const BookingSuccess = () => {
     const { bookingId } = useParams();
     const [eTicket, setETicket] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [status, setStatus] = useState('loading'); // loading, pending, confirmed, rejected, error
     const [error, setError] = useState(null);
     const ticketRef = useRef(null);
+    const pollingRef = useRef(null);
+
+    const fetchTicketOrStatus = async () => {
+        try {
+            // First try to get E-Ticket (works if confirmed)
+            const ticketData = await bookingService.getETicket(bookingId);
+
+            if (ticketData.success) {
+                setETicket(ticketData.data);
+                setStatus('confirmed');
+                return true; // Stop polling
+            }
+
+            // If not found or error, check booking status directly
+            const bookingData = await bookingService.getBookingById(bookingId);
+            if (bookingData && bookingData.data) {
+                const bookingStatus = bookingData.data.status;
+
+                if (bookingStatus === 'confirmed') {
+                    // Retry fetching ticket in next poll or immediate retry could be done
+                    return false;
+                } else if (bookingStatus === 'cancelled' || bookingStatus === 'rejected') {
+                    setStatus('rejected');
+                    return true; // Stop polling
+                } else {
+                    setStatus('pending');
+                    return false; // Keep polling
+                }
+            } else {
+                throw new Error("Could not check booking status");
+            }
+
+        } catch (err) {
+            console.error("Polling error", err);
+            // Don't stop polling immediately on network error, but maybe limit retries in real app
+            // For now, if E-Ticket 404s, it might just mean not generated yet.
+            // setStatus('pending'); // Assume pending if failed
+            return false;
+        }
+    };
 
     useEffect(() => {
-        const fetchETicket = async () => {
-            try {
-                const data = await bookingService.getETicket(bookingId);
-                if (data.success) {
-                    setETicket(data.data);
-                } else {
-                    setError(data.message || "Could not retrieve E-Ticket.");
+        let mounted = true;
+
+        const startPolling = async () => {
+            // Initial check
+            const stop = await fetchTicketOrStatus();
+            if (stop || !mounted) return;
+
+            // Loop
+            pollingRef.current = setInterval(async () => {
+                const shouldStop = await fetchTicketOrStatus();
+                if (shouldStop) {
+                    clearInterval(pollingRef.current);
                 }
-            } catch (err) {
-                setError("An error occurred while loading your ticket.");
-            } finally {
-                setLoading(false);
-            }
+            }, 3000); // Poll every 3 seconds
         };
-        fetchETicket();
+
+        startPolling();
+
+        return () => {
+            mounted = false;
+            if (pollingRef.current) clearInterval(pollingRef.current);
+        };
     }, [bookingId]);
 
     const handlePrint = () => {
         window.print();
     };
 
-    if (loading) return (
+    // --- RENDER STATES ---
+
+    if (status === 'loading') return (
         <div className="success-page">
             <Navbar />
-            <div className="loading-screen text-white pt-20 text-center">Generating E-Ticket...</div>
+            <div className="flex flex-col items-center justify-center h-[60vh] text-white">
+                <Loader2 className="animate-spin mb-4 text-red-500" size={48} />
+                <p className="text-xl">Checking payment status...</p>
+            </div>
+        </div>
+    );
+
+    if (status === 'pending') return (
+        <div className="success-page">
+            <Navbar />
+            <div className="container success-container text-center pt-20">
+                <div className="bg-[#1a1a1a] p-10 rounded-2xl max-w-2xl mx-auto border border-gray-800">
+                    <Loader2 className="animate-spin mx-auto text-yellow-500 mb-6" size={64} />
+                    <h1 className="text-3xl font-bold text-white mb-4">Payment Verification in Progress</h1>
+                    <p className="text-gray-400 text-lg mb-8">
+                        We have received your payment proof. Please wait while an administrator verifies your transaction.
+                        <br />
+                        This page will automatically update once confirmed.
+                    </p>
+                    <div className="p-4 bg-[#252525] rounded-lg text-sm text-gray-400 inline-block">
+                        Booking ID: <span className="text-white font-mono font-bold">#{bookingId}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
+    if (status === 'rejected') return (
+        <div className="success-page">
+            <Navbar />
+            <div className="container success-container text-center pt-20">
+                <div className="bg-[#1a1a1a] p-10 rounded-2xl max-w-2xl mx-auto border border-red-900/50">
+                    <div className="mx-auto bg-red-900/20 w-20 h-20 rounded-full flex items-center justify-center mb-6">
+                        <span className="text-4xl text-red-500">✕</span>
+                    </div>
+                    <h1 className="text-3xl font-bold text-white mb-4">Payment Rejected</h1>
+                    <p className="text-gray-400 text-lg mb-8">
+                        Unfortunately, your payment could not be verified.
+                        Please contact support or try booking again.
+                    </p>
+                    <Link to="/" className="bg-red-600 text-white px-8 py-3 rounded-lg hover:bg-red-700 transition">
+                        Back to Home
+                    </Link>
+                </div>
+            </div>
         </div>
     );
 
@@ -51,13 +144,9 @@ const BookingSuccess = () => {
         </div>
     );
 
-    if (!eTicket) return (
-        <div className="success-page">
-            <Navbar />
-            <div className="text-white pt-20 text-center">Ticket not found or still processing.</div>
-        </div>
-    );
+    if (!eTicket) return null; // Should not reach here if status is confirmed
 
+    // --- CONFIRMED STATE (Original UI) ---
     return (
         <div className="success-page">
             <Navbar />

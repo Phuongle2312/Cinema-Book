@@ -9,18 +9,24 @@ class BookingDetail extends Model
 {
     use HasFactory;
 
-    protected $table = 'booking_seats';
-    protected $primaryKey = 'id';
+    protected $table = 'booking_details';
+    protected $primaryKey = 'detail_id';
 
     protected $fillable = [
         'booking_id',
         'seat_id',
         'showtime_id',
-        'price',
+        'ticket_code',
+        'base_price',
+        'seat_extra_price',
+        'final_price',
+        'status',
     ];
 
     protected $casts = [
-        'price' => 'decimal:0',
+        'base_price' => 'decimal:0',
+        'seat_extra_price' => 'decimal:0',
+        'final_price' => 'decimal:0',
     ];
 
     /**

@@ -21,6 +21,8 @@ class Movie extends Model
         'slug',
         'description',
         'synopsis',
+        'actor',
+        'director',
         'duration',
         'release_date',
         'age_rating',
@@ -29,6 +31,7 @@ class Movie extends Model
         'trailer_url',
         'status',
         'is_featured',
+        'rating',
         'base_price',
     ];
 
@@ -81,10 +84,25 @@ class Movie extends Model
         return $this->hasMany(Showtime::class, 'movie_id', 'movie_id');
     }
 
-    // Một phim có nhiều reviews
-    public function reviews()
+    // Một phim có nhiều discounts (Admin-controlled)
+    public function discounts()
     {
-        return $this->hasMany(Review::class, 'movie_id', 'movie_id');
+        return $this->hasMany(MovieDiscount::class, 'movie_id', 'movie_id');
+    }
+
+    // Một phim có nhiều wishlists (Thay thế reviews)
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class, 'movie_id', 'movie_id');
+    }
+
+    // Lấy discount đang active cho phim
+    public function activeDiscount()
+    {
+        return $this->hasOne(MovieDiscount::class, 'movie_id', 'movie_id')
+            ->where('is_active', true)
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now());
     }
 
     /**
@@ -135,16 +153,33 @@ class Movie extends Model
      * Accessors & Mutators
      */
 
-    // Lấy rating trung bình từ reviews
-    public function getAverageRatingAttribute()
+    // Lấy số lượng wishlist (popularity score)
+    public function getPopularityScoreAttribute()
     {
-        return $this->reviews()->avg('rating') ?? 0;
+        return $this->wishlists()->count();
     }
 
-    // Lấy tổng số reviews
-    public function getTotalReviewsAttribute()
+    // Lấy tổng số wishlists
+    public function getTotalWishlistsAttribute()
     {
-        return $this->reviews()->count();
+        return $this->wishlists()->count();
+    }
+
+    // Lấy giá sau discount (nếu có)
+    public function getDiscountedPriceAttribute()
+    {
+        $discount = $this->activeDiscount;
+        if ($discount && $discount->isValid()) {
+            return $discount->getFinalPrice($this->base_price ?? 0);
+        }
+        return $this->base_price ?? 0;
+    }
+
+    // Check nếu phim đang có discount
+    public function getHasDiscountAttribute()
+    {
+        $discount = $this->activeDiscount;
+        return $discount && $discount->isValid();
     }
 
     // Kiểm tra phim có đang chiếu không

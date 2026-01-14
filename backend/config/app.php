@@ -133,6 +133,6 @@ return [
     |
     */
 
-    'seat_lock_timeout' => env('SEAT_LOCK_TIMEOUT', 6),
+    'seat_lock_timeout' => (int) env('SEAT_LOCK_TIMEOUT', 6),
 
 ];

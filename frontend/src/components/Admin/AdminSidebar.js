@@ -1,13 +1,15 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Film, Users, Settings, LogOut, Ticket, Building, CalendarClock, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Film, Users, Settings, LogOut, Ticket, Building, CalendarClock, CreditCard } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const AdminSidebar = () => {
-  const handleLogout = () => {
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
     if (window.confirm('Are you sure you want to logout?')) {
-      // Stub for logout logic
-      console.log('Logging out...');
-      window.location.href = '/login'; // Temporary redirect
+      await logout();
+      window.location.href = '/login';
     }
   };
 
@@ -60,11 +62,11 @@ const AdminSidebar = () => {
           Showtimes
         </NavLink>
         <NavLink
-          to="/admin/reviews"
+          to="/admin/payments"
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
-          <MessageSquare size={20} />
-          Reviews
+          <CreditCard size={20} />
+          Payments
         </NavLink>
         <NavLink
           to="/admin/settings"

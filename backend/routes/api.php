@@ -7,9 +7,9 @@ use App\Http\Controllers\Api\MovieController;
 use App\Http\Controllers\Api\TheaterController;
 use App\Http\Controllers\Api\ShowtimeController;
 use App\Http\Controllers\Api\BookingController;
-use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\Api\PromotionController;
+use App\Http\Controllers\Api\WishlistController;
 
 /*
 |--------------------------------------------------------------------------
@@ -66,7 +66,6 @@ Route::prefix('movies')->group(function () {
     Route::get('/search', [MovieController::class, 'search']);       // GET /api/movies/search?q=
     Route::get('/filter', [MovieController::class, 'filter']);       // GET /api/movies/filter
     Route::get('/{id}', [MovieController::class, 'show']);           // GET /api/movies/{id}
-    Route::get('/{id}/reviews', [ReviewController::class, 'index']); // GET /api/movies/{id}/reviews
 });
 
 // ============================================
@@ -97,8 +96,9 @@ Route::prefix('auth')->group(function () {
     Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout']);
 });
 
-Route::get('/promotions', [PromotionController::class, 'index']);
-Route::post('/promotions/validate', [PromotionController::class, 'validate']);
+// Promotions removed as per plan
+// Route::get('/promotions', [PromotionController::class, 'index']);
+// Route::post('/promotions/validate', [PromotionController::class, 'validate']);
 
 // ============================================
 // PROTECTED ROUTES (Cần authentication)
@@ -120,16 +120,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('bookings')->group(function () {
         Route::get('/', [BookingController::class, 'userBookings']);              // GET /api/bookings (List my bookings)
         Route::get('/{id}', [BookingController::class, 'show']);                  // GET /api/bookings/{id}
+        Route::post('/hold', [BookingController::class, 'hold']);                 // POST /api/bookings/hold
         Route::post('/', [BookingController::class, 'store']);                    // POST /api/bookings
         Route::post('/{id}/pay', [BookingController::class, 'pay']);              // POST /api/bookings/{id}/pay
         Route::get('/e-ticket/{id}', [BookingController::class, 'eTicket']);      // GET /api/bookings/e-ticket/{id}
     });
 
-    // ============================================
-    // REVIEWS ROUTES
-    // ============================================
-    Route::post('/movies/{id}/reviews', [ReviewController::class, 'store']); // POST /api/movies/{id}/reviews
-    
     // ============================================
     // NOTIFICATIONS ROUTES
     // ============================================
@@ -137,6 +133,25 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [NotificationController::class, 'index']);              // GET /api/notifications
         Route::post('/{id}/read', [NotificationController::class, 'markAsRead']); // POST /api/notifications/{id}/read
         Route::post('/read-all', [NotificationController::class, 'markAllAsRead']); // POST /api/notifications/read-all
+    });
+
+    // ============================================
+    // PAYMENT ROUTES (User submits payment proof)
+    // ============================================
+    Route::prefix('payments')->group(function () {
+        Route::post('/submit', [PaymentController::class, 'submit']);           // POST /api/payments/submit
+        Route::get('/history', [PaymentController::class, 'history']);          // GET /api/payments/history
+        Route::get('/check/{bookingId}', [PaymentController::class, 'checkStatus']); // GET /api/payments/check/{bookingId}
+        Route::get('/{id}', [PaymentController::class, 'show']);                // GET /api/payments/{id}
+    });
+
+    // ============================================
+    // WISHLIST ROUTES
+    // ============================================
+    Route::prefix('wishlist')->group(function () {
+        Route::get('/', [WishlistController::class, 'index']);             // GET /api/wishlist
+        Route::post('/toggle', [WishlistController::class, 'toggle']);     // POST /api/wishlist/toggle
+        Route::get('/check/{movie_id}', [WishlistController::class, 'check']); // GET /api/wishlist/check/{movie_id}
     });
     
     // Logout removed from here to be handled manually
@@ -147,6 +162,9 @@ Route::middleware('auth:sanctum')->group(function () {
 // ============================================
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
     
+    // Dashboard Stats
+    Route::get('/dashboard/stats', [\App\Http\Controllers\Api\Admin\DashboardController::class, 'stats']);
+
     // CRUD Theaters
     Route::apiResource('theaters', \App\Http\Controllers\Api\Admin\TheaterController::class)->except(['destroy']);
     
@@ -156,11 +174,34 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // CRUD Showtimes
     Route::apiResource('showtimes', \App\Http\Controllers\Api\Admin\ShowtimeController::class)->except(['destroy']);
     
-    // Review Moderation
-    Route::prefix('reviews')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Api\Admin\ReviewController::class, 'index']);
-        Route::put('/{id}/approve', [\App\Http\Controllers\Api\Admin\ReviewController::class, 'approve']);
-        Route::put('/{id}/reject', [\App\Http\Controllers\Api\Admin\ReviewController::class, 'reject']);
-        // Route::delete('/{id}', [\App\Http\Controllers\Api\Admin\ReviewController::class, 'destroy']); // Disabled
+    // Users List
+    Route::get('/users', [\App\Http\Controllers\Api\Admin\UserController::class, 'index']);
+    
+    // ============================================
+    // PAYMENT VERIFICATION (Admin approves/rejects)
+    // ============================================
+    Route::prefix('payments')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\Admin\PaymentVerificationController::class, 'index']);
+        Route::get('/stats', [\App\Http\Controllers\Api\Admin\PaymentVerificationController::class, 'stats']);
+        Route::get('/{id}', [\App\Http\Controllers\Api\Admin\PaymentVerificationController::class, 'show']);
+        Route::post('/{id}/approve', [\App\Http\Controllers\Api\Admin\PaymentVerificationController::class, 'approve']);
+        Route::post('/{id}/reject', [\App\Http\Controllers\Api\Admin\PaymentVerificationController::class, 'reject']);
+    });
+
+    // DISCOUNTS / OFFERS (Replaced by MovieDiscountController below)
+    // Route::get('/discounts', [\App\Http\Controllers\Api\Admin\PromotionController::class, 'index']);
+    // Route::post('/discounts/{id}/toggle', [\App\Http\Controllers\Api\Admin\PromotionController::class, 'toggle']);
+
+    // ============================================
+    // MOVIE DISCOUNTS (Admin manages discounts)
+    // ============================================
+    Route::prefix('discounts')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\Admin\MovieDiscountController::class, 'index']);
+        Route::get('/active', [\App\Http\Controllers\Api\Admin\MovieDiscountController::class, 'activeDiscounts']);
+        Route::post('/', [\App\Http\Controllers\Api\Admin\MovieDiscountController::class, 'store']);
+        Route::get('/{id}', [\App\Http\Controllers\Api\Admin\MovieDiscountController::class, 'show']);
+        Route::put('/{id}', [\App\Http\Controllers\Api\Admin\MovieDiscountController::class, 'update']);
+        Route::delete('/{id}', [\App\Http\Controllers\Api\Admin\MovieDiscountController::class, 'destroy']);
+        Route::post('/{id}/toggle', [\App\Http\Controllers\Api\Admin\MovieDiscountController::class, 'toggle']);
     });
 });

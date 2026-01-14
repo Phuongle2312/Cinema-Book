@@ -19,6 +19,7 @@ const Movies = () => {
         city: '',
         rating: '',
         date: '',
+        status: '',
         sort_by: 'release_date'
     });
     const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -62,7 +63,15 @@ const Movies = () => {
             if (query) {
                 response = await movieService.searchMovies(query);
             } else if (Object.values(filters).some(v => v !== '')) {
-                response = await movieService.filterMovies(filters);
+                // Map frontend filter keys to backend expected keys
+                const apiFilters = {};
+                if (filters.genre) apiFilters.hashtag = filters.genre; // Backend expects 'hashtag' for genre names
+                if (filters.language) apiFilters.hashtag = filters.language; // Assuming languages are also hashtags or separate logic needed
+                if (filters.rating) apiFilters.rating = filters.rating;
+                if (filters.status) apiFilters.status = filters.status;
+                if (filters.sort_by) apiFilters.sort_by = filters.sort_by;
+
+                response = await movieService.filterMovies(apiFilters);
             } else {
                 response = await movieService.getMovies();
             }
@@ -81,8 +90,15 @@ const Movies = () => {
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const q = params.get('q') || '';
+        const status = params.get('status') || '';
+
         setSearchQuery(q);
-        fetchMovies(q, activeFilters);
+        const initialFilters = {
+            ...activeFilters,
+            status: status
+        };
+        setActiveFilters(initialFilters);
+        fetchMovies(q, initialFilters);
     }, [location.search, fetchMovies]);
 
     const handleSearchSubmit = (e) => {
@@ -91,9 +107,11 @@ const Movies = () => {
     };
 
     const handleFilterChange = (name, value) => {
-        const newFilters = { ...activeFilters, [name]: value };
-        setActiveFilters(newFilters);
-        fetchMovies(searchQuery, newFilters);
+        setActiveFilters(prev => {
+            const newFilters = { ...prev, [name]: value };
+            fetchMovies(searchQuery, newFilters); // Pass newFilters directly
+            return newFilters;
+        });
     };
 
     const clearFilters = () => {
@@ -193,6 +211,7 @@ const Movies = () => {
                                     key={movie.movie_id}
                                     movie={{
                                         id: movie.movie_id,
+                                        slug: movie.slug,
                                         title: movie.title,
                                         poster: movie.poster_url || movie.image,
                                         rating: parseFloat(movie.rating) || 0,

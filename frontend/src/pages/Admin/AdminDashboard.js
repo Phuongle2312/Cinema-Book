@@ -1,16 +1,46 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import AdminHeader from '../../components/Admin/AdminHeader';
-import { Users, Film, Calendar, DollarSign, TrendingUp, Activity } from 'lucide-react';
+import { Users, Film, Calendar, DollarSign, TrendingUp, Activity, Loader2 } from 'lucide-react';
+import adminService from '../../services/adminService';
 
 const AdminDashboard = () => {
-    // Mock Data
-    const bookings = [
-        { id: '#BK001', user: 'John Doe', movie: 'Avengers: Endgame', date: '2024-03-10', amount: '$24.00', status: 'Completed' },
-        { id: '#BK002', user: 'Jane Smith', movie: 'Dune: Part Two', date: '2024-03-09', amount: '$32.00', status: 'Pending' },
-        { id: '#BK003', user: 'Mike Johnson', movie: 'Kung Fu Panda 4', date: '2024-03-09', amount: '$16.00', status: 'Completed' },
-        { id: '#BK004', user: 'Sarah Wilson', movie: 'Dune: Part Two', date: '2024-03-08', amount: '$64.00', status: 'Cancelled' },
-        { id: '#BK005', user: 'Tom Brown', movie: 'Civil War', date: '2024-03-08', amount: '$20.00', status: 'Completed' },
-    ];
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        bookings: { total: 0, growth: 0 },
+        revenue: { total: 0, growth: 0 },
+        users: { total: 0, new_this_month: 0 },
+        movies: { active: 0, genres_count: 0 },
+        recent_bookings: []
+    });
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const response = await adminService.getDashboardStats();
+                if (response.success) {
+                    setStats(response.data);
+                }
+            } catch (error) {
+                console.error("Failed to load admin stats");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStats();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-screen bg-black">
+                <Loader2 className="animate-spin text-red-600" size={48} />
+            </div>
+        );
+    }
+
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    };
 
     return (
         <>
@@ -21,9 +51,9 @@ const AdminDashboard = () => {
                     <div className="admin-card stats-card" style={{ background: 'linear-gradient(135deg, #e50914, #b20710)', color: 'white' }}>
                         <div style={{ position: 'relative', zIndex: 1 }}>
                             <h3 style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '8px' }}>Total Bookings</h3>
-                            <p style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '4px' }}>1,230</p>
+                            <p style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '4px' }}>{stats.bookings.total}</p>
                             <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '12px' }}>
-                                +12.5% vs last month
+                                {stats.bookings.growth >= 0 ? '+' : ''}{stats.bookings.growth}% vs last month
                             </span>
                         </div>
                         <Calendar size={100} className="stats-icon" style={{ color: 'white', opacity: 0.2 }} />
@@ -34,9 +64,9 @@ const AdminDashboard = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                             <div>
                                 <h3 style={{ fontSize: '0.875rem', color: 'var(--admin-text-secondary)', marginBottom: '8px' }}>Total Revenue</h3>
-                                <p style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--admin-text-main)', marginBottom: '4px' }}>$45,200</p>
+                                <p style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--admin-text-main)', marginBottom: '4px' }}>{formatCurrency(stats.revenue.total)}</p>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--admin-success)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <TrendingUp size={14} /> +8.2%
+                                    <TrendingUp size={14} /> {stats.revenue.growth >= 0 ? '+' : ''}{stats.revenue.growth}%
                                 </span>
                             </div>
                             <div style={{ background: 'rgba(34, 197, 94, 0.1)', padding: '12px', borderRadius: '50%', color: 'var(--admin-success)' }}>
@@ -50,9 +80,9 @@ const AdminDashboard = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                             <div>
                                 <h3 style={{ fontSize: '0.875rem', color: 'var(--admin-text-secondary)', marginBottom: '8px' }}>Registered Users</h3>
-                                <p style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--admin-text-main)', marginBottom: '4px' }}>150</p>
+                                <p style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--admin-text-main)', marginBottom: '4px' }}>{stats.users.total}</p>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--admin-success)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <TrendingUp size={14} /> +24 new
+                                    <TrendingUp size={14} /> +{stats.users.new_this_month} new
                                 </span>
                             </div>
                             <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '12px', borderRadius: '50%', color: 'var(--admin-warning)' }}>
@@ -66,9 +96,9 @@ const AdminDashboard = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                             <div>
                                 <h3 style={{ fontSize: '0.875rem', color: 'var(--admin-text-secondary)', marginBottom: '8px' }}>Active Movies</h3>
-                                <p style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--admin-text-main)', marginBottom: '4px' }}>24</p>
+                                <p style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--admin-text-main)', marginBottom: '4px' }}>{stats.movies.active}</p>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--admin-text-secondary)' }}>
-                                    Across 12 genres
+                                    Across {stats.movies.genres_count} genres
                                 </span>
                             </div>
                             <div style={{ background: 'rgba(229, 9, 20, 0.1)', padding: '12px', borderRadius: '50%', color: 'var(--admin-primary)' }}>
@@ -97,9 +127,9 @@ const AdminDashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {bookings.map((booking) => (
+                                    {stats.recent_bookings.map((booking) => (
                                         <tr key={booking.id}>
-                                            <td style={{ fontWeight: '500' }}>{booking.id}</td>
+                                            <td style={{ fontWeight: '500' }}>#{booking.id}</td>
                                             <td>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                     <div style={{ width: '24px', height: '24px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: 'var(--admin-text-main)' }}>
@@ -111,15 +141,20 @@ const AdminDashboard = () => {
                                             <td>{booking.movie}</td>
                                             <td>{booking.date}</td>
                                             <td>
-                                                <span className={`status-badge ${booking.status === 'Completed' ? 'status-active' :
-                                                    booking.status === 'Cancelled' ? 'status-inactive' : 'status-inactive'
+                                                <span className={`status-badge ${booking.status === 'Confirmed' ? 'status-active' :
+                                                    (booking.status === 'Cancelled' ? 'status-inactive' : 'status-inactive')
                                                     }`} style={booking.status === 'Cancelled' ? { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5' } : {}}>
                                                     {booking.status}
                                                 </span>
                                             </td>
-                                            <td style={{ textAlign: 'right', fontWeight: '500' }}>{booking.amount}</td>
+                                            <td style={{ textAlign: 'right', fontWeight: '500' }}>{formatCurrency(booking.amount)}</td>
                                         </tr>
                                     ))}
+                                    {stats.recent_bookings.length === 0 && (
+                                        <tr>
+                                            <td colSpan="6" style={{ textAlign: 'center', padding: '24px', color: 'gray' }}>No bookings found</td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>

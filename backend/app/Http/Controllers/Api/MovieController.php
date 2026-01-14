@@ -20,7 +20,8 @@ class MovieController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Movie::with(['hashtags']);
+        $query = Movie::with(['hashtags', 'genres'])
+                     ->withCount('wishlists');
 
         // Lọc theo trạng thái (now_showing, coming_soon, ended)
         if ($request->filled('status')) {
@@ -38,9 +39,8 @@ class MovieController extends Controller
         $sortBy = $request->get('sort_by', 'release_date');
         $sortOrder = $request->get('sort_order', 'desc');
 
-        if ($sortBy === 'rating') {
-            $query->withAvg('reviews', 'rating')
-                ->orderBy('reviews_avg_rating', $sortOrder);
+        if ($sortBy === 'popularity') {
+            $query->orderBy('wishlists_count', $sortOrder);
         } else {
             $query->orderBy($sortBy, $sortOrder);
         }
@@ -63,23 +63,22 @@ class MovieController extends Controller
 
     /**
      * GET /api/movies/featured
-     * Lấy danh sách phim nổi bật (rating cao, đang chiếu)
+     * Lấy danh sách phim nổi bật (đang chiếu)
      */
     public function featured()
     {
-        $movies = Movie::with(['hashtags'])
-            ->withAvg('reviews', 'rating')
-            // ->where('is_featured', true) // Column missing
+        $movies = Movie::with(['hashtags', 'genres'])
+            ->withCount('wishlists')
             ->whereIn('status', ['now_showing', 'coming_soon'])
-            ->orderBy('reviews_avg_rating', 'desc')
+            ->orderBy('wishlists_count', 'desc')
+            ->orderBy('release_date', 'desc')
             ->limit(10)
             ->get();
 
-        // Fallback: If no featured movies, get latest now_showing movies
+        // Fallback: If no movies found, get latest movies
         if ($movies->isEmpty()) {
-            $movies = Movie::with(['hashtags'])
-                ->withAvg('reviews', 'rating')
-                ->where('status', 'now_showing')
+            $movies = Movie::with(['hashtags', 'genres'])
+                ->withCount('wishlists')
                 ->latest()
                 ->limit(10)
                 ->get();
@@ -93,23 +92,26 @@ class MovieController extends Controller
 
     /**
      * GET /api/movies/{id}
-     * Lấy chi tiết phim bao gồm cast, genres, showtimes
+     * Lấy chi tiết phim bao gồm genres, showtimes
      */
     public function show($id)
     {
-        $movie = Movie::with([
+        $query = Movie::with([
             'hashtags',
+            'genres',
+            'activeDiscount',
             'showtimes' => function ($query) {
                 $query->where('start_time', '>=', now())
                     ->with('room.theater')
                     ->orderBy('start_time');
-            },
-            'reviews' => function ($query) {
-                $query->with('user:id,name')
-                    ->latest()
-                    ->limit(10);
             }
-        ])->find($id);
+        ])->withCount('wishlists');
+
+        if (is_numeric($id)) {
+            $movie = $query->where('movie_id', $id)->first();
+        } else {
+            $movie = $query->where('slug', $id)->first();
+        }
 
         if (!$movie) {
             return response()->json([
@@ -118,10 +120,16 @@ class MovieController extends Controller
             ], 404);
         }
 
-        // Tính average rating từ reviews
-        $avgRating = $movie->reviews()->avg('rating');
-        $movie->average_rating = round($avgRating, 1);
-        $movie->review_count = $movie->reviews()->count();
+        // Add computed fields
+        $movie->popularity_score = $movie->wishlists_count;
+        
+        // Check if movie has active discount
+        if ($movie->activeDiscount) {
+            $movie->has_discount = true;
+            $movie->discounted_price = $movie->activeDiscount->getFinalPrice($movie->base_price ?? 0);
+        } else {
+            $movie->has_discount = false;
+        }
 
         return response()->json([
             'success' => true,
@@ -141,13 +149,15 @@ class MovieController extends Controller
 
         $query = $request->get('q');
 
-        $movies = Movie::with(['hashtags'])
-            ->withAvg('reviews', 'rating')
+        $movies = Movie::with(['hashtags', 'genres'])
+            ->withCount('wishlists')
             ->where(function ($q) use ($query) {
                 $q->where('title', 'LIKE', "%{$query}%")
-                    ->orWhere('description', 'LIKE', "%{$query}%");
+                    ->orWhere('description', 'LIKE', "%{$query}%")
+                    ->orWhere('actor', 'LIKE', "%{$query}%")
+                    ->orWhere('director', 'LIKE', "%{$query}%");
             })
-            ->orderBy('reviews_avg_rating', 'desc')
+            ->orderBy('wishlists_count', 'desc')
             ->paginate(12);
 
         return response()->json([
@@ -171,12 +181,11 @@ class MovieController extends Controller
         $request->validate([
             'city' => 'nullable|string',
             'hashtag_id' => 'nullable|exists:hashtags,hashtag_id',
-            'rating' => 'nullable|numeric|min:0|max:10',
             'date' => 'nullable|date',
             'status' => 'nullable|in:coming_soon,now_showing,ended'
         ]);
 
-        $query = Movie::with(['hashtags']);
+        $query = Movie::with(['hashtags'])->withCount('wishlists');
 
         // Lọc theo thành phố
         if ($request->filled('city')) {
@@ -196,15 +205,6 @@ class MovieController extends Controller
             });
         }
 
-        // Lọc theo rating tối thiểu
-        if ($request->filled('rating')) {
-            $query->withAvg('reviews', 'rating')
-                ->having('reviews_avg_rating', '>=', $request->rating);
-        } else {
-            // Always load avg rating for sorting if not filtered
-            $query->withAvg('reviews', 'rating');
-        }
-
         // Lọc theo ngày chiếu
         if ($request->filled('date')) {
             $query->whereHas('showtimes', function ($q) use ($request) {
@@ -217,8 +217,8 @@ class MovieController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Sắp xếp
-        $query->orderBy('reviews_avg_rating', 'desc');
+        // Sắp xếp theo popularity (wishlist count)
+        $query->orderBy('wishlists_count', 'desc');
 
         $movies = $query->paginate(12);
 
@@ -229,8 +229,9 @@ class MovieController extends Controller
                 'current_page' => $movies->currentPage(),
                 'last_page' => $movies->lastPage(),
                 'total' => $movies->total(),
-                'filters' => $request->only(['city', 'genre_id', 'language_id', 'rating', 'date', 'status'])
+                'filters' => $request->only(['city', 'hashtag_id', 'date', 'status'])
             ]
         ]);
     }
 }
+

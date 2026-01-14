@@ -363,14 +363,43 @@
 }
 
 .seat.selected {
-    background: #e50914 !important;
-    /* Netflix/Vibrant Red */
     color: white !important;
-    border-color: #ff4d4d;
-    transform: scale(1.15);
-    /* Slightly larger */
-    box-shadow: 0 0 20px rgba(229, 9, 20, 0.6);
-    z-index: 5;
+    border: 2px solid #fff !important;
+    z-index: 10;
+    animation: pulse-selected 1.5s infinite;
+}
+
+/* Selected Standard - Sky Blue */
+.seat.selected.standard {
+    background: #0ea5e9 !important;
+    box-shadow: 0 0 30px rgba(14, 165, 233, 0.8), 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
+/* Selected VIP - Golden Yellow */
+.seat.selected.vip {
+    background: #facc15 !important;
+    color: #000 !important;
+    box-shadow: 0 0 30px rgba(250, 204, 21, 0.8), 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
+/* Selected Couple - Hot Pink */
+.seat.selected.couple {
+    background: #ec4899 !important;
+    box-shadow: 0 0 30px rgba(236, 72, 153, 0.8), 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
+@keyframes pulse-selected {
+    0% {
+        transform: scale(1.2);
+    }
+
+    50% {
+        transform: scale(1.3);
+    }
+
+    100% {
+        transform: scale(1.2);
+    }
 }
 
 .seat.booked {
