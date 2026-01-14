@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import eventsData from '../data/events.json';
-import { Calendar, Tag, ArrowLeft, Share2, Clock } from 'lucide-react';
+import { Calendar, Tag, ArrowLeft, Share2 } from 'lucide-react';
 import './Promotions.css'; // Updated to use Promotions.css or similar
 
 const OfferDetails = () => {

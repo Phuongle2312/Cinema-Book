@@ -179,7 +179,7 @@ const RegisterPage = () => {
                         <div className="form-options">
                             <label className="remember-me">
                                 <input type="checkbox" required />
-                                <span className="terms">I agree to the <a href="#">Terms & Conditions</a></span>
+                                <span className="terms">I agree to the <Link to="/terms">Terms & Conditions</Link></span>
                             </label>
                         </div>
 

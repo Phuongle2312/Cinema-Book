@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AdminHeader from '../../components/Admin/AdminHeader';
-import { Search, Filter, Check, X, Trash2, MessageSquare, Star } from 'lucide-react';
+import { Search, Filter, Check, X, Trash2, Star } from 'lucide-react';
 
 const ManageReviews = () => {
     const [searchTerm, setSearchTerm] = useState('');

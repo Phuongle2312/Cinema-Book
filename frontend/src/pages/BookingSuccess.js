@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { CheckCircle, Share2, Download, Printer } from 'lucide-react';
+import { CheckCircle, Download, Printer } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import bookingService from '../services/bookingService';
 import './BookingSuccess.css';

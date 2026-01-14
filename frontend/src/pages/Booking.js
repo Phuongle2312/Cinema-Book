@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Calendar as CalendarIcon, Clock, MapPin, Loader2, Info, Ticket, Film } from 'lucide-react';
+import { ChevronLeft, Clock, MapPin, Loader2, Info, Film } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
@@ -76,7 +76,7 @@ const Booking = () => {
             }
         };
         fetchInitialData();
-    }, [movieId]);
+    }, [movieId, selectedDate]);
 
     // 2. Refetch Showtimes when Date changes
     useEffect(() => {

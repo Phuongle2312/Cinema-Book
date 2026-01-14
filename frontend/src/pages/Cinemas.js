@@ -3,7 +3,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import theaterService from '../services/theaterService';
 import './Cinemas.css';
-import { MapPin, Loader2, Navigation, Phone, Info } from 'lucide-react';
+import { MapPin, Loader2, Navigation, Info } from 'lucide-react';
 
 const Cinemas = () => {
     const [theaters, setTheaters] = useState([]);

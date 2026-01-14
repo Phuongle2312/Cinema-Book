@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Star, Clock, Calendar, Globe, Play, ChevronLeft, User, Heart, MapPin, Info } from 'lucide-react';
+import { Clock, Calendar, Globe, ChevronLeft, User, Heart } from 'lucide-react';
 import movieService from '../services/movieService';
 import wishlistService from '../services/wishlistService';
 import { getYouTubeEmbedUrl } from '../utils/videoUtils';

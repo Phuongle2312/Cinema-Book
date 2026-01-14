@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Heart, Info, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Play, Heart, Info, X } from 'lucide-react';
 import './Banner.css';
 import bannerData from '../data/banner.json';
-import trailerData from '../data/trailer.json';
 import { getYouTubeEmbedUrl } from '../utils/videoUtils';
 
 const Banner = () => {
@@ -11,10 +10,6 @@ const Banner = () => {
 
     const nextSlide = () => {
         setCurrentIndex((prev) => (prev === bannerData.length - 1 ? 0 : prev + 1));
-    };
-
-    const prevSlide = () => {
-        setCurrentIndex((prev) => (prev === 0 ? bannerData.length - 1 : prev - 1));
     };
 
     const currentMovie = bannerData[currentIndex];

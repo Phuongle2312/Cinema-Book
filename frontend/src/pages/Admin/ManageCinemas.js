@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AdminHeader from '../../components/Admin/AdminHeader';
-import { Plus, Search, Filter, Edit, Trash2, MapPin, Monitor, X } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, MapPin, Monitor, X } from 'lucide-react';
 
 const ManageCinemas = () => {
     const [searchTerm, setSearchTerm] = useState('');

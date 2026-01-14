@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, LogOut, Ticket, Calendar, MapPin, Clock } from 'lucide-react';
+import { LogOut, Ticket, Calendar, MapPin, Clock } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import bookingService from '../services/bookingService';
 import { Link, useNavigate } from 'react-router-dom';

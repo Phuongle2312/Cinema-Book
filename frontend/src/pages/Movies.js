@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, SlidersHorizontal, Loader2, X } from 'lucide-react';
+import { Filter, SlidersHorizontal, Loader2, X } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import movieService from '../services/movieService';
 import Navbar from '../components/Navbar';
@@ -83,12 +83,8 @@ const Movies = () => {
         const q = params.get('q') || '';
         setSearchQuery(q);
         fetchMovies(q, activeFilters);
-    }, [location.search, fetchMovies]);
+    }, [location.search, fetchMovies, activeFilters]);
 
-    const handleSearchSubmit = (e) => {
-        e.preventDefault();
-        fetchMovies(searchQuery, activeFilters);
-    };
 
     const handleFilterChange = (name, value) => {
         const newFilters = { ...activeFilters, [name]: value };

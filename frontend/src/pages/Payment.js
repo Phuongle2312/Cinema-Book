@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Clock, CreditCard, ShieldCheck, TicketPercent, CheckCircle2, ChevronRight, MapPin, Calendar, Info } from 'lucide-react';
+import { Clock, CreditCard, ShieldCheck, TicketPercent, CheckCircle2, MapPin, Calendar, Info } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import bookingService from '../services/bookingService';
@@ -19,7 +19,6 @@ const Payment = () => {
     const [error, setError] = useState(null);
 
     // Offers State
-    const [systemOffers, setSystemOffers] = useState([]);
     const [appliedOffers, setAppliedOffers] = useState([]);
     const [totalDiscount, setTotalDiscount] = useState(0);
 
@@ -43,7 +42,6 @@ const Payment = () => {
 
                     // Auto-apply system offers
                     const offers = offersRes.data || [];
-                    setSystemOffers(offers);
 
                     let discount = 0;
                     const applied = [];

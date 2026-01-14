@@ -2,7 +2,7 @@ import React from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import eventsData from '../data/events.json';
-import { Calendar, Star, Sparkles } from 'lucide-react';
+import { Calendar, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './Promotions.css';
 
