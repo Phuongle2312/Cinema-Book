@@ -1,0 +1,8 @@
+showtime_id | Type: bigint(20) unsigned | Null: NO | Default: 
+movie_id | Type: bigint(20) unsigned | Null: NO | Default: 
+room_id | Type: bigint(20) unsigned | Null: NO | Default: 
+start_time | Type: datetime | Null: YES | Default: 
+base_price | Type: decimal(10,0) | Null: NO | Default: 
+status | Type: enum('scheduled','ongoing','completed','cancelled') | Null: NO | Default: scheduled
+created_at | Type: timestamp | Null: YES | Default: 
+updated_at | Type: timestamp | Null: YES | Default: 

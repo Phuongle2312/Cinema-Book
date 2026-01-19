@@ -11,12 +11,24 @@
 - [x] Delete identified redundant tables
 - [x] Remove unused columns
 - [x] Clean up orphan records (if any)
+## Step 6: Complete Admin Panel Functionality (Real Data)
+- [x] **Showtimes**: Implement Backend Controller & Frontend Integration (`ManageShowtimes.js`).
+- [x] **Offers**: Create `OfferController`, Routes, and Frontend Integration (`ManageOffers.js`).
+- [x] **Reviews**: Create `ReviewController`, Routes, and Frontend Integration (`ManageReviews.js`).
+- [x] **Cinemas**: Update `ManageCinemas.js` to fetch cities dynamically (fix hardcoded values).
+- [x] **Payments**: Verify `ManagePayments.js` is using real backend API.
 
 ## Implementation Phase - Flow Standardization
 - [x] Add missing foreign keys and indexes
 - [x] Implement cascaded deletes where appropriate
 - [x] Strengthen seat locking/release logic if needed
 - [x] Validate transaction -> booking integrity
+
+## Audit & Logic Refinement (Latest Request)
+- [x] **Concurrency Logic**: Fix `ShowtimeController` & `BookingService` to handle `pending_verification` seats (Prevent Double Booking).
+- [x] **Review Policy**: Relax restrictions in `ReviewController` to allow reviews without purchase (verified purchase tag logic preserved).
+- [x] **Auth Security**: Enforce mixed-case password validation in `AuthController`.
+- [x] **System Reality Check**: Validate Offer logic and Movie status filtering.
 
 ## Verification Phase
 - [x] Verify 3NF compliance

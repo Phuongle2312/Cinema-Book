@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Film, Users, Settings, LogOut, Ticket, Building, CalendarClock, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Film, Users, Settings, LogOut, Ticket, Building, CalendarClock, MessageSquare, CreditCard, ClipboardList } from 'lucide-react';
 
 const AdminSidebar = () => {
   const handleLogout = () => {
@@ -39,12 +39,13 @@ const AdminSidebar = () => {
           Users
         </NavLink>
         <NavLink
-          to="/admin/offers"
+          to="/admin/bookings"
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
-          <Ticket size={20} />
-          Offers & Events
+          <ClipboardList size={20} />
+          Bookings
         </NavLink>
+
         <NavLink
           to="/admin/cinemas"
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
@@ -65,6 +66,13 @@ const AdminSidebar = () => {
         >
           <MessageSquare size={20} />
           Reviews
+        </NavLink>
+        <NavLink
+          to="/admin/payments"
+          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+        >
+          <CreditCard size={20} />
+          Payments
         </NavLink>
         <NavLink
           to="/admin/settings"

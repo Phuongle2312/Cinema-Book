@@ -76,9 +76,10 @@
     display: none;
 }
 
-.date-card {
-    min-width: 80px;
-    height: 100px;
+.cgv-date-card {
+    min-width: 90px;
+    height: auto;
+    padding: 15px 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -88,38 +89,40 @@
     border-radius: 12px;
     cursor: pointer;
     transition: var(--transition);
+    gap: 5px;
 }
 
-.date-card:hover {
+.cgv-date-card:hover {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.2);
 }
 
-.date-card.active {
+.cgv-date-card.active {
     background: var(--cgv-red);
     border-color: var(--cgv-red);
     box-shadow: 0 10px 20px rgba(229, 9, 20, 0.3);
     transform: translateY(-5px);
 }
 
-.date-card .day-name {
+.cgv-date-card .day-name {
     font-size: 0.75rem;
     text-transform: uppercase;
     font-weight: 700;
     color: var(--text-muted);
-    margin-bottom: 4px;
+    margin-bottom: 0;
 }
 
-.date-card .day-num {
+.cgv-date-card .day-num {
     font-size: 1.5rem;
     font-weight: 800;
+    line-height: 1.2;
 }
 
-.date-card .month {
+.cgv-date-card .month {
     font-size: 0.75rem;
 }
 
-.date-card.active * {
+.cgv-date-card.active * {
     color: white !important;
 }
 
@@ -220,6 +223,7 @@
     font-weight: 700;
     cursor: pointer;
     transition: var(--transition);
+    color: white;
 }
 
 .time-btn:hover {

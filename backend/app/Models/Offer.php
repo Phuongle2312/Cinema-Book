@@ -16,8 +16,13 @@ class Offer extends Model
     protected $table = 'offers';
 
     protected $fillable = [
+        'title',          // Added
         'code',
         'description',
+        'image_url',      // Added
+        'tag',            // Added
+        'date_display',   // Added
+        'type',           // Added
         'discount_type',
         'discount_value',
         'min_purchase_amount',
@@ -29,6 +34,8 @@ class Offer extends Model
         'is_active',
         'is_system_wide',
     ];
+
+    protected $appends = ['discount', 'expiry', 'status', 'image', 'date']; // Added aliases
 
     protected $casts = [
         'discount_value' => 'decimal:2',
@@ -42,6 +49,45 @@ class Offer extends Model
         'is_system_wide' => 'boolean',
     ];
 
+    // --- Accessors for Frontend Compatibility ---
+
+    public function getImageAttribute()
+    {
+        return $this->image_url;
+    }
+
+    public function getDateAttribute()
+    {
+        return $this->date_display;
+    }
+
+    public function getDiscountAttribute()
+    {
+        if ($this->discount_type === 'percentage') {
+            return floatval($this->discount_value) . '% Off';
+        }
+        return number_format($this->discount_value) . ' VND';
+    }
+
+    public function getExpiryAttribute()
+    {
+        return $this->valid_to ? $this->valid_to->format('Y-m-d') : null;
+    }
+
+    public function getStatusAttribute()
+    {
+        if (!$this->is_active) {
+            return 'Inactive';
+        }
+        if ($this->valid_to && $this->valid_to->isPast()) {
+            return 'Expired';
+        }
+        if ($this->valid_from && $this->valid_from->isFuture()) {
+            return 'Upcoming';
+        }
+        return 'Active';
+    }
+
     /**
      * Scope: Lấy các offers đang active
      */
@@ -49,7 +95,7 @@ class Offer extends Model
     {
         return $query->where('is_active', true)
             ->where('valid_from', '<=', now())
-            ->where('valid_to', '>=', now())
+            ->whereDate('valid_to', '>=', now())
             ->where(function ($q) {
                 $q->whereNull('max_uses')
                     ->orWhereRaw('current_uses < max_uses');
@@ -61,7 +107,11 @@ class Offer extends Model
      */
     public function scopeSystemWide($query)
     {
-        return $query->active()->where('is_system_wide', true);
+        return $query->active()
+            ->where('is_system_wide', true)
+            ->where(function ($q) {
+                $q->whereNull('code')->orWhere('code', '');
+            });
     }
 
     /**
@@ -69,7 +119,7 @@ class Offer extends Model
      */
     public function isValid(): bool
     {
-        if (! $this->is_active) {
+        if (!$this->is_active) {
             return false;
         }
 

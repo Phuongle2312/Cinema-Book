@@ -108,7 +108,7 @@ class MovieController extends Controller
             $movie = $query->where('slug', $slugOrId)->first();
         }
 
-        if (! $movie) {
+        if (!$movie) {
             return response()->json([
                 'success' => false,
                 'message' => 'Không tìm thấy phim',
@@ -164,38 +164,60 @@ class MovieController extends Controller
     {
         $request->validate([
             'city' => 'nullable|string',
-            'genre_id' => 'nullable|exists:genres,genre_id',
-            'language_id' => 'nullable|exists:languages,language_id',
+            'genre' => 'nullable|string',
+            'language' => 'nullable|string',
+            'rating' => 'nullable|numeric|min:0|max:10',
             'date' => 'nullable|date',
             'status' => 'nullable|in:coming_soon,now_showing,ended',
         ]);
 
         $query = Movie::with(['genres', 'languages']);
 
-        // Lọc theo thành phố
+        // Filter by City
         if ($request->filled('city')) {
             $query->whereHas('showtimes.room.theater.city', function ($q) use ($request) {
                 $q->where('name', $request->city);
             });
         }
 
-        // Lọc theo thể loại
-        if ($request->filled('genre_id')) {
+        // Filter by Genre (Name)
+        if ($request->filled('genre')) {
             $query->whereHas('genres', function ($q) use ($request) {
-                $q->where('genres.genre_id', $request->genre_id);
+                $q->where('name', $request->genre);
             });
         }
 
-        // Lọc theo ngày chiếu
+        // Filter by Language (Name)
+        if ($request->filled('language')) {
+            $query->whereHas('languages', function ($q) use ($request) {
+                $q->where('name', $request->language); // Assuming language table has 'name' column
+            });
+        }
+
+        // Filter by Rating (Minimum)
+        if ($request->filled('rating')) {
+            $query->withAvg('reviews', 'rating');
+            $query->having('reviews_avg_rating', '>=', $request->rating);
+        }
+
+        // Filter by Date
         if ($request->filled('date')) {
             $query->whereHas('showtimes', function ($q) use ($request) {
                 $q->whereDate('start_time', $request->date);
             });
         }
 
-        // Lọc theo trạng thái
+        // Filter by Status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        // Filter by Query (Search Text) - Added to fix search issue
+        if ($request->filled('query')) {
+            $searchTerm = $request->query('query'); // Use 'query' method to avoid conflict with query variable
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'LIKE', "%{$searchTerm}%");
+            });
         }
 
         $query->latest();
@@ -209,7 +231,7 @@ class MovieController extends Controller
                 'current_page' => $movies->currentPage(),
                 'last_page' => $movies->lastPage(),
                 'total' => $movies->total(),
-                'filters' => $request->only(['city', 'genre_id', 'language_id', 'date', 'status']),
+                'filters' => $request->all(),
             ],
         ]);
     }

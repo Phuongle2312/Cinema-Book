@@ -1,29 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminHeader from '../../components/Admin/AdminHeader';
-import { Plus, Search, Filter, Tag, Calendar, Edit, Trash2, X } from 'lucide-react';
+import { Plus, Search, Filter, Tag, Calendar, Edit, Trash2, X, Loader2 } from 'lucide-react';
+import adminService from '../../services/adminService';
+import { useToast } from '../../context/ToastContext';
 
 const ManageOffers = () => {
+    const toast = useToast();
     const [searchTerm, setSearchTerm] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [editingOffer, setEditingOffer] = useState(null);
-
-    // Initial Mock Data
-    const [offers, setOffers] = useState([
-        { id: 1, title: 'Summer Blockbuster Sale', type: 'Event', code: '-', discount: '50% off', expiry: '2024-08-31', status: 'Active' },
-        { id: 2, title: 'New User Welcome', type: 'Voucher', code: 'WELCOME50', discount: '$5.00', expiry: 'Permanent', status: 'Active' },
-        { id: 3, title: 'Popcorn Weekend', type: 'Event', code: '-', discount: 'Free Popcorn', expiry: '2024-03-10', status: 'Expired' },
-        { id: 4, title: 'Student Discount', type: 'Voucher', code: 'STUDENT24', discount: '20% off', expiry: '2024-12-31', status: 'Active' },
-        { id: 5, title: 'Marvel Marathon', type: 'Event', code: '-', discount: 'Bundle Price', expiry: '2024-05-01', status: 'Upcoming' },
-    ]);
+    const [offers, setOffers] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const [formData, setFormData] = useState({
         title: '',
         type: 'Voucher',
         code: '',
         discount: '',
+        discountType: 'fixed',
         expiry: '',
         status: 'Active'
     });
+
+    const fetchOffers = async () => {
+        setLoading(true);
+        try {
+            const response = await adminService.getOffers({ search: searchTerm });
+            if (response.success) {
+                setOffers(response.data.data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch offers", error);
+            toast.error("Failed to fetch offers");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            fetchOffers();
+        }, 500);
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm]);
 
     // Handlers
     const handleAdd = () => {
@@ -33,6 +52,7 @@ const ManageOffers = () => {
             type: 'Voucher',
             code: '',
             discount: '',
+            discountType: 'fixed',
             expiry: '',
             status: 'Active'
         });
@@ -41,26 +61,55 @@ const ManageOffers = () => {
 
     const handleEdit = (offer) => {
         setEditingOffer(offer);
-        setFormData({ ...offer });
+        setFormData({
+            title: offer.title,
+            type: offer.type,
+            code: offer.code || '',
+            discount: offer.raw_discount_value || '', // Raw numeric value
+            discountType: offer.raw_discount_type || 'fixed',
+            expiry: offer.expiry || '',
+            status: offer.status // This might be 'Expired' from backend calculation
+        });
         setShowModal(true);
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this item?')) {
-            setOffers(offers.filter(offer => offer.id !== id));
+            try {
+                await adminService.deleteOffer(id);
+                toast.success("Offer deleted successfully");
+                fetchOffers();
+            } catch (error) {
+                toast.error("Failed to delete offer");
+            }
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (editingOffer) {
-            // Update existing
-            setOffers(offers.map(offer => offer.id === editingOffer.id ? { ...formData, id: offer.id } : offer));
-        } else {
-            // Add new
-            setOffers([...offers, { ...formData, id: offers.length + 1 }]);
+        try {
+            // Construct payload with explicit types
+            const payload = {
+                ...formData,
+                discount_type: formData.discountType,
+                discount_value: formData.discount
+            };
+
+            if (editingOffer) {
+                // Update existing
+                await adminService.updateOffer(editingOffer.id, payload);
+                toast.success("Offer updated successfully");
+            } else {
+                // Add new
+                await adminService.createOffer(payload);
+                toast.success("Offer created successfully");
+            }
+            setShowModal(false);
+            fetchOffers();
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to save offer");
         }
-        setShowModal(false);
     };
 
     return (
@@ -106,62 +155,71 @@ const ManageOffers = () => {
                     </div>
 
                     <div className="admin-table-container" style={{ border: 'none', borderRadius: '0' }}>
-                        <table className="admin-table">
-                            <thead>
-                                <tr>
-                                    <th style={{ width: '60px' }}>ID</th>
-                                    <th>Title</th>
-                                    <th>Type</th>
-                                    <th>Code</th>
-                                    <th>Discount</th>
-                                    <th>Expiry</th>
-                                    <th>Status</th>
-                                    <th style={{ textAlign: 'right' }}>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {offers.filter(item => item.title.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
-                                    <tr key={item.id}>
-                                        <td style={{ color: 'var(--admin-text-secondary)' }}>#{item.id}</td>
-                                        <td>
-                                            <span style={{ fontWeight: '500' }}>{item.title}</span>
-                                        </td>
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                {item.type === 'Voucher' ? <Tag size={14} color="var(--admin-primary)" /> : <Calendar size={14} color="#f59e0b" />}
-                                                <span style={{ fontSize: '0.9rem' }}>{item.type}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            {item.code !== '-' ? (
-                                                <code style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>{item.code}</code>
-                                            ) : (
-                                                <span style={{ color: 'var(--admin-text-secondary)' }}>-</span>
-                                            )}
-                                        </td>
-                                        <td style={{ color: 'var(--admin-success)', fontWeight: '500' }}>{item.discount}</td>
-                                        <td>{item.expiry}</td>
-                                        <td>
-                                            <span className={`status-badge ${item.status === 'Active' ? 'status-active' :
-                                                    item.status === 'Upcoming' ? 'status-inactive' : 'status-inactive'
-                                                }`} style={item.status === 'Upcoming' ? { background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' } : {}}>
-                                                {item.status}
-                                            </span>
-                                        </td>
-                                        <td style={{ textAlign: 'right' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                                <button className="action-btn edit" title="Edit" onClick={() => handleEdit(item)}>
-                                                    <Edit size={18} />
-                                                </button>
-                                                <button className="action-btn delete" title="Delete" onClick={() => handleDelete(item.id)}>
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </div>
-                                        </td>
+                        {loading ? (
+                            <div className="flex justify-center p-8"><Loader2 className="animate-spin text-white" /></div>
+                        ) : (
+                            <table className="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th style={{ width: '60px' }}>ID</th>
+                                        <th>Title</th>
+                                        <th>Type</th>
+                                        <th>Code</th>
+                                        <th>Discount</th>
+                                        <th>Expiry</th>
+                                        <th>Status</th>
+                                        <th style={{ textAlign: 'right' }}>Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {offers.length > 0 ? offers.map((item) => (
+                                        <tr key={item.id}>
+                                            <td style={{ color: 'var(--admin-text-secondary)' }}>#{item.id}</td>
+                                            <td>
+                                                <span style={{ fontWeight: '500' }}>{item.title}</span>
+                                            </td>
+                                            <td>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    {item.type === 'Voucher' ? <Tag size={14} color="var(--admin-primary)" /> : <Calendar size={14} color="#f59e0b" />}
+                                                    <span style={{ fontSize: '0.9rem' }}>{item.type}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {item.code && item.code !== '-' ? (
+                                                    <code style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>{item.code}</code>
+                                                ) : (
+                                                    <span style={{ color: 'var(--admin-text-secondary)' }}>-</span>
+                                                )}
+                                            </td>
+                                            <td style={{ color: 'var(--admin-success)', fontWeight: '500' }}>{item.discount}</td>
+                                            <td>{item.expiry}</td>
+                                            <td>
+                                                <span className={`status-badge ${item.status === 'Active' ? 'status-active' :
+                                                    item.status === 'Upcoming' ? 'status-inactive' : 'status-inactive'
+                                                    }`} style={
+                                                        item.status === 'Upcoming' ? { background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' } :
+                                                            item.status === 'Expired' ? { background: 'rgba(239, 68, 68, 0.2)', color: '#f87171' } : {}
+                                                    }>
+                                                    {item.status}
+                                                </span>
+                                            </td>
+                                            <td style={{ textAlign: 'right' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                                    <button className="action-btn edit" title="Edit" onClick={() => handleEdit(item)}>
+                                                        <Edit size={18} />
+                                                    </button>
+                                                    <button className="action-btn delete" title="Delete" onClick={() => handleDelete(item.id)}>
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )) : (
+                                        <tr><td colSpan="8" className="text-center p-4 text-gray-500">No offers found</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
                 </div>
 
@@ -212,15 +270,25 @@ const ManageOffers = () => {
                                         </div>
                                     )}
                                     <div className="form-group">
-                                        <label className="form-label">Discount / Offer</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            value={formData.discount}
-                                            onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
-                                            placeholder="e.g. 50% off or Free Popcorn"
-                                            required
-                                        />
+                                        <label className="form-label">Discount Configuration</label>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px' }}>
+                                            <input
+                                                type="number"
+                                                className="form-control"
+                                                value={formData.discount}
+                                                onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+                                                placeholder={formData.discountType === 'percentage' ? "e.g. 50" : "e.g. 50000"}
+                                                required
+                                            />
+                                            <select
+                                                className="form-control"
+                                                value={formData.discountType}
+                                                onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
+                                            >
+                                                <option value="fixed">VND (Fixed)</option>
+                                                <option value="percentage">% (Percent)</option>
+                                            </select>
+                                        </div>
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">Expiry / Date</label>

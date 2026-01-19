@@ -16,6 +16,21 @@ const movieService = {
         }
     },
 
+    // Phim sắp chiếu
+    getComingSoonMovies: async () => {
+        try {
+            const response = await api.get('/movies', { params: { status: 'coming_soon' } });
+            return response.data;
+        } catch (error) {
+            console.error('Get coming soon movies error:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể lấy danh sách phim sắp chiếu',
+                data: []
+            };
+        }
+    },
+
     // Danh sách phim
     getMovies: async (params = {}) => {
         try {
@@ -75,6 +90,36 @@ const movieService = {
             return {
                 success: false,
                 message: error.response?.data?.message || 'Lọc phim thất bại',
+                data: []
+            };
+        }
+    },
+
+    // Lấy danh sách thể loại
+    getGenres: async () => {
+        try {
+            const response = await api.get('/genres');
+            return response.data;
+        } catch (error) {
+            console.error('Get genres error:', error);
+            return {
+                success: false,
+                message: 'Failed to load genres',
+                data: []
+            };
+        }
+    },
+
+    // Lấy danh sách ngôn ngữ
+    getLanguages: async () => {
+        try {
+            const response = await api.get('/languages');
+            return response.data;
+        } catch (error) {
+            console.error('Get languages error:', error);
+            return {
+                success: false,
+                message: 'Failed to load languages',
                 data: []
             };
         }

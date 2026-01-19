@@ -25,7 +25,7 @@ class ShowtimeController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Showtime::with(['movie', 'theater', 'room']);
+        $query = Showtime::with(['movie', 'room.theater']);
 
         // Filter by movie
         if ($request->has('movie_id')) {
@@ -39,11 +39,10 @@ class ShowtimeController extends Controller
 
         // Filter by date
         if ($request->has('date')) {
-            $query->whereDate('show_date', $request->date);
+            $query->whereDate('start_time', $request->date);
         }
 
-        $showtimes = $query->orderBy('show_date', 'desc')
-            ->orderBy('show_time', 'desc')
+        $showtimes = $query->orderBy('start_time', 'desc')
             ->paginate(20);
 
         return response()->json([
@@ -59,9 +58,9 @@ class ShowtimeController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'movie_id' => 'required|exists:movies,id',
-            'theater_id' => 'required|exists:theaters,id',
-            'room_id' => 'required|exists:rooms,id',
+            'movie_id' => 'required|exists:movies,movie_id',
+            'theater_id' => 'required|exists:theaters,theater_id',
+            'room_id' => 'required|exists:rooms,room_id',
             'show_date' => 'required|date',
             'show_time' => 'required|date_format:H:i',
             'base_price' => 'required|numeric|min:0',
@@ -78,11 +77,11 @@ class ShowtimeController extends Controller
         }
 
         // Kiểm tra room có thuộc theater không
-        $room = Room::where('id', $request->room_id)
+        $room = Room::where('room_id', $request->room_id)
             ->where('theater_id', $request->theater_id)
             ->first();
 
-        if (! $room) {
+        if (!$room) {
             return response()->json([
                 'success' => false,
                 'message' => 'Phòng chiếu không thuộc rạp này',
@@ -90,63 +89,40 @@ class ShowtimeController extends Controller
         }
 
         // --- LOGIC KIỂM TRA TRÙNG LỊCH (CONFLICT CHECK) ---
-
         // 1. Lấy thông tin phim để biết thời lượng
         $movie = Movie::find($request->movie_id);
-        if (! $movie) {
+        if (!$movie) {
             return response()->json(['success' => false, 'message' => 'Phim không tồn tại'], 404);
         }
 
-        $cleaningTime = 15; // Thời gian dọn dẹp giữa các suất : 15 phút
+        $newStart = Carbon::parse($request->show_date . ' ' . $request->show_time);
 
-        // 2. Tính thời gian Bắt đầu và Kết thúc của suất chiếu MỚI dự kiến
-        // Format: YYYY-MM-DD HH:mm:ss
-        $newStart = Carbon::parse($request->show_date.' '.$request->show_time);
-        $newEnd = $newStart->copy()->addMinutes($movie->duration + $cleaningTime);
-
-        // 3. Lấy tất cả suất chiếu CŨ trong cùng Phòng và cùng Ngày
-        $existingShowtimes = Showtime::with('movie')
-            ->where('room_id', $request->room_id)
-            ->whereDate('show_date', $request->show_date)
-            ->get();
-
-        // 4. Duyệt qua từng suất cũ để so sánh
-        foreach ($existingShowtimes as $existing) {
-            // Tính thời gian của suất cũ
-            // Dùng start_time có sẵn trong DB hoặc parse lại từ show_date/time cho chắc chắn
-            $existingStart = Carbon::parse($existing->show_date->format('Y-m-d').' '.$existing->show_time);
-
-            // Thời lượng phim cũ + dọn dẹp
-            $duration = $existing->movie ? $existing->movie->duration : 0;
-            $existingEnd = $existingStart->copy()->addMinutes($duration + $cleaningTime);
-
-            // Công thức kiểm tra giao nhau (Overlap): (StartA < EndB) && (EndA > StartB)
-            if ($newStart->lt($existingEnd) && $newEnd->gt($existingStart)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Phòng chiếu bị trùng lịch! Phòng bận từ '.$existingStart->format('H:i').' đến '.$existingEnd->format('H:i').' (Gồm dọn dẹp).',
-                ], 400);
-            }
+        $overlap = $this->checkOverlap($request->room_id, $newStart, $movie->duration);
+        if ($overlap) {
+            return response()->json([
+                'success' => false,
+                'message' => $overlap,
+            ], 400);
         }
         // --- KẾT THÚC KIỂM TRA ---
 
         DB::beginTransaction();
         try {
-            $showtime = Showtime::create($request->all());
+            // Prepare data for creation
+            $data = $request->all();
+            $data['start_time'] = $newStart;
+            // Remove helper fields if they interfere (Showtime model fillable doesn't have them, so they are ignored, but good to be safe)
+            unset($data['show_date']);
+            unset($data['show_time']);
+
+            $showtime = Showtime::create($data);
 
             // Tự động tạo seats cho showtime này dựa trên room
-            $roomSeats = Seat::where('room_id', $request->room_id)->get();
-
-            foreach ($roomSeats as $seat) {
-                $showtime->seats()->create([
-                    'seat_id' => $seat->id,
-                    'is_available' => true,
-                ]);
-            }
+            // FIX: Không tạo record cứng cho seats. Availability được tính động.
 
             DB::commit();
 
-            $showtime->load(['movie', 'theater', 'room']);
+            $showtime->load(['movie', 'room.theater', 'room']);
 
             return response()->json([
                 'success' => true,
@@ -159,7 +135,7 @@ class ShowtimeController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Lỗi khi tạo suất chiếu: '.$e->getMessage(),
+                'message' => 'Lỗi khi tạo suất chiếu: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -172,7 +148,7 @@ class ShowtimeController extends Controller
     {
         $showtime = Showtime::find($id);
 
-        if (! $showtime) {
+        if (!$showtime) {
             return response()->json([
                 'success' => false,
                 'message' => 'Suất chiếu không tồn tại',
@@ -195,14 +171,94 @@ class ShowtimeController extends Controller
             ], 422);
         }
 
-        $showtime->update($request->all());
-        $showtime->load(['movie', 'theater', 'room']);
+        // Check for start_time update needed
+        if ($request->has('show_date') || $request->has('show_date') || $request->has('show_time')) {
+            $currentStart = $showtime->start_time;
+            $newDateString = $request->input('show_date', $currentStart->format('Y-m-d'));
+            $newTimeString = $request->input('show_time', $currentStart->format('H:i'));
+
+            $newStart = Carbon::parse("$newDateString $newTimeString");
+
+            // Check Overlap
+            $movie = $showtime->movie; // Getting existing movie duration
+            if ($request->has('movie_id')) {
+                $movie = Movie::find($request->movie_id);
+            }
+
+            $duration = $movie ? $movie->duration : 0;
+            $roomId = $request->input('room_id', $showtime->room_id);
+
+            $overlap = $this->checkOverlap($roomId, $newStart, $duration, $showtime->showtime_id);
+            if ($overlap) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $overlap,
+                ], 400);
+            }
+
+            $data = $request->all();
+            $data['start_time'] = $newStart;
+            unset($data['show_date']);
+            unset($data['show_time']);
+
+            $showtime->update($data);
+        } else {
+            // Also check overlap if ONLY room changed (rare but possible) or movie changed
+            if ($request->has('room_id') || $request->has('movie_id')) {
+                $roomId = $request->input('room_id', $showtime->room_id);
+                $movie = $showtime->movie;
+                if ($request->has('movie_id'))
+                    $movie = Movie::find($request->movie_id);
+
+                $overlap = $this->checkOverlap($roomId, $showtime->start_time, $movie->duration, $showtime->showtime_id);
+                if ($overlap) {
+                    return response()->json(['success' => false, 'message' => $overlap], 400);
+                }
+            }
+
+            $showtime->update($request->all());
+        }
+
+        $showtime->load(['movie', 'room.theater', 'room']);
 
         return response()->json([
             'success' => true,
             'message' => 'Suất chiếu đã được cập nhật',
             'data' => $showtime,
         ]);
+    }
+
+    /**
+     * Check for overlapping showtimes
+     * Returns error message string or null if safe.
+     */
+    private function checkOverlap($roomId, $newStartTime, $duration, $excludeId = null)
+    {
+        $cleaningTime = 15; // 15 mins
+        $newStart = Carbon::parse($newStartTime);
+        $newEnd = $newStart->copy()->addMinutes($duration + $cleaningTime);
+
+        $query = Showtime::with('movie')
+            ->where('room_id', $roomId)
+            ->whereDate('start_time', $newStart->toDateString());
+
+        if ($excludeId) {
+            $query->where('showtime_id', '!=', $excludeId);
+        }
+
+        $existingShowtimes = $query->get();
+
+        foreach ($existingShowtimes as $existing) {
+            $existingStart = Carbon::parse($existing->start_time);
+            $existingDuration = $existing->movie ? $existing->movie->duration : 0;
+            $existingEnd = $existingStart->copy()->addMinutes($existingDuration + $cleaningTime);
+
+            if ($newStart->lt($existingEnd) && $newEnd->gt($existingStart)) {
+                return "Phòng chiếu bị trùng lịch! Phòng bận từ " . $existingStart->format('H:i') . " đến " . $existingEnd->format('H:i');
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -213,7 +269,7 @@ class ShowtimeController extends Controller
     {
         $showtime = Showtime::find($id);
 
-        if (! $showtime) {
+        if (!$showtime) {
             return response()->json([
                 'success' => false,
                 'message' => 'Suất chiếu không tồn tại',

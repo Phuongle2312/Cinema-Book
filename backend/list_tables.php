@@ -1,7 +1,15 @@
 <?php
 
+require __DIR__ . '/vendor/autoload.php';
+$app = require __DIR__ . '/bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel->bootstrap();
+
+use Illuminate\Support\Facades\DB;
+
 $tables = DB::select('SHOW TABLES');
-echo "Tables in DB:\n";
 foreach ($tables as $table) {
-    echo array_values((array) $table)[0]."\n";
+    foreach ($table as $key => $value) {
+        echo $value . "\n";
+    }
 }

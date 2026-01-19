@@ -1,43 +1,301 @@
 .payment-page {
     background-color: #0a0a0a;
+    min-height: 100vh;
+    color: #fff;
+    padding-top: 120px;
+    /* Ensure content starts below Navbar */
+    position: relative;
+    z-index: 1;
 }
 
 .payment-container {
     max-width: 1200px;
     margin: 0 auto;
+    padding: 0 20px;
 }
 
-/* Animations */
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
+.payment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.payment-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+}
+
+.payment-timer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a0a0a0;
+    font-weight: 600;
+}
+
+.payment-timer.urgent {
+    background: rgba(229, 9, 20, 0.1);
+    border-color: #e50914;
+    color: #e50914;
+}
+
+/* Layout Grid */
+.payment-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 40px;
+}
+
+@media (max-width: 1024px) {
+    .payment-grid {
+        grid-template-columns: 1fr;
     }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
-.payment-content {
-    animation: slideUp 0.6s ease-out forwards;
+/* Common Card Style */
+.payment-card {
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 30px;
+    overflow: hidden;
+    margin-bottom: 30px;
 }
 
-/* Custom scrollbar for payment page */
-.payment-page::-webkit-scrollbar {
-    width: 8px;
+.card-header {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.payment-page::-webkit-scrollbar-track {
-    background: #0a0a0a;
-}
-
-.payment-page::-webkit-scrollbar-thumb {
-    background: #1f1f1f;
+.indicator {
+    width: 6px;
+    height: 20px;
+    background: #e50914;
     border-radius: 4px;
+    display: inline-block;
 }
 
-.payment-page::-webkit-scrollbar-thumb:hover {
-    background: #2a2a2a;
+/* Movie Info Section */
+.movie-info-container {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.movie-poster-pay {
+    width: 160px;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .movie-poster-pay {
+        display: none;
+        /* Hide poster on mobile if needed, or adjust size */
+    }
+}
+
+.movie-details h3 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+    line-height: 1.2;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-size: 0.95rem;
+}
+
+.info-item svg {
+    color: #e50914;
+    width: 18px;
+    height: 18px;
+}
+
+/* Summary Section */
+.price-summary {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 20px;
+    margin-top: 20px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    color: #a0a0a0;
+}
+
+.summary-row.total {
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 800;
+    align-items: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.total-price {
+    color: #e50914;
+    font-size: 1.8rem;
+}
+
+/* Offers Section */
+.offer-section {
+    background: rgba(229, 9, 20, 0.05);
+    border: 1px solid rgba(229, 9, 20, 0.2);
+    border-radius: 20px;
+    padding: 25px;
+}
+
+.offer-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+}
+
+/* Payment Methods */
+.method-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid transparent;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.method-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.method-item.active {
+    background: rgba(229, 9, 20, 0.1);
+    border-color: #e50914;
+}
+
+.method-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-weight: 600;
+}
+
+.method-icon-img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+}
+
+/* Button */
+.pay-btn {
+    width: 100%;
+    padding: 18px;
+    background: #e50914;
+    color: #fff;
+    border: none;
+    border-radius: 15px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 10px 20px rgba(229, 9, 20, 0.3);
+}
+
+.pay-btn:hover:not(:disabled) {
+    background: #f40612;
+    transform: translateY(-2px);
+    box-shadow: 0 15px 25px rgba(229, 9, 20, 0.4);
+}
+
+.pay-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Voucher Input Styling */
+.voucher-input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.voucher-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.voucher-input:focus {
+    border-color: #e50914;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.voucher-input::placeholder {
+    color: #666;
+}
+
+.voucher-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-weight: 700;
+    padding: 0 24px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.voucher-btn:hover:not(:disabled) {
+    background: #e50914;
+    border-color: #e50914;
+    box-shadow: 0 5px 15px rgba(229, 9, 20, 0.3);
+}
+
+.voucher-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

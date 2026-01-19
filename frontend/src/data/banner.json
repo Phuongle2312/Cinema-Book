@@ -17,7 +17,8 @@
             "Animation",
             "Fantasy",
             "Romance"
-        ]
+        ],
+        "trailerUrl": "https://youtu.be/GJ1jrCnm-t8"
     },
     {
         "id": 2,
@@ -35,7 +36,8 @@
             "In Theaters",
             "Thriller",
             "War"
-        ]
+        ],
+        "trailerUrl": "https://youtu.be/G1tq7cz5Au8"
     },
     {
         "id": 3,
@@ -55,7 +57,8 @@
             "Crime",
             "Mystery",
             "Adventure"
-        ]
+        ],
+        "trailerUrl": "https://youtu.be/-E3lMRx7HRQ"
     },
     {
         "id": 4,
@@ -65,7 +68,7 @@
         "description": "After many years of absence, the legendary Four Horsemen of Now You See Me officially return with a completely new mission: the most daring diamond heist of their career. But this time, they're not alone, joined by a new generation of magicians including Greenblatt, Smith and...",
         "rating": "6.1",
         "quality": "4K",
-        "age": "T16",
+        "age": "K",
         "year": "2025",
         "duration": "1h 50m",
         "genres": [
@@ -75,7 +78,8 @@
             "Comedy",
             "Animation",
             "Fantasy"
-        ]
+        ],
+        "trailerUrl": "https://youtu.be/0hc8yz5-d5Y"
     },
     {
         "id": 5,
@@ -94,17 +98,18 @@
             "Mystery",
             "Comedy",
             "Adventure"
-        ]
+        ],
+        "trailerUrl": "https://www.youtube.com/watch?v=gj5ibYSz8C0"
     },
     {
         "id": 6,
-        "titleImage": "https://static.nutscdn.com/vimg/0-260/b7fd897464cd8c3f063447b7e48a041f.png",
-        "title": "Wike: For Good",
+        "titleImage": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Wicked_For_Good_V2_Alt.webp/250px-Wicked_For_Good_V2_Alt.webp.png",
+        "title": "Wicked: For Good",
         "image": "https://static.nutscdn.com/vimg/1920-0/213eb724175dfd71ccfed2ab74dc291c.webp",
         "description": "Detective Benoit Blanc teams up with an enthusiastic young priest to investigate a seemingly impossible crime at a church in a small town with a dark past.",
         "rating": "7.4",
         "quality": "4K",
-        "age": "T16",
+        "age": "T13",
         "year": "2025",
         "duration": "2h 25m",
         "genres": [
@@ -114,6 +119,7 @@
             "Fantasy",
             "Magic",
             "Romance"
-        ]
+        ],
+        "trailerUrl": "https://www.youtube.com/watch?v=6COmYeLSh4M"
     }
 ]

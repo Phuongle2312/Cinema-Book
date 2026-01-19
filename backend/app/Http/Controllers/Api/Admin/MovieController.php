@@ -19,11 +19,12 @@ class MovieController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Movie::with(['genres', 'languages', 'cast']);
+        $query = Movie::with(['genres', 'languages', 'cast'])
+            ->withAvg('reviews', 'rating'); // Calculate average rating
 
         // Search
         if ($request->has('search')) {
-            $query->where('title', 'like', '%'.$request->search.'%');
+            $query->where('title', 'like', '%' . $request->search . '%');
         }
 
         // Filter by status
@@ -47,17 +48,19 @@ class MovieController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
-            'description' => 'required|string',
+            'description' => 'nullable|string',
             'duration' => 'required|integer|min:1',
             'release_date' => 'required|date',
             'status' => 'required|in:now_showing,coming_soon,ended',
-            'poster_url' => 'nullable|url',
-            'trailer_url' => 'nullable|url',
-            'rating' => 'nullable|numeric|min:0|max:10',
+            'age_rating' => 'nullable|string|max:10', // Added
+            'synopsis' => 'nullable|string', // Added
+            'content' => 'nullable|string', // Added
+            'poster_url' => 'nullable|string',
+            'trailer_url' => 'nullable|string',
             'genre_ids' => 'nullable|array',
-            'genre_ids.*' => 'exists:genres,id',
+            'genre_ids.*' => 'exists:genres,genre_id',
             'language_ids' => 'nullable|array',
-            'language_ids.*' => 'exists:languages,id',
+            'language_ids.*' => 'exists:languages,language_id',
         ]);
 
         if ($validator->fails()) {
@@ -67,7 +70,16 @@ class MovieController extends Controller
             ], 422);
         }
 
-        $movie = Movie::create($request->except(['genre_ids', 'language_ids']));
+        // rating column has been removed and is now calculated view
+        // Use only() to allow safe mass assignment
+        $fillable = (new Movie())->getFillable();
+        $movieData = $request->only($fillable);
+        // Ensure boolean
+        if ($request->has('is_featured')) {
+            $movieData['is_featured'] = filter_var($request->is_featured, FILTER_VALIDATE_BOOLEAN);
+        }
+
+        $movie = Movie::create($movieData);
 
         // Attach relationships
         if ($request->has('genre_ids')) {
@@ -95,53 +107,76 @@ class MovieController extends Controller
     {
         $movie = Movie::find($id);
 
-        if (! $movie) {
+        if (!$movie) {
             return response()->json([
                 'success' => false,
                 'message' => 'Phim không tồn tại',
             ], 404);
         }
 
+        // Validations
         $validator = Validator::make($request->all(), [
             'title' => 'sometimes|string|max:255',
-            'description' => 'sometimes|string',
+            'description' => 'nullable|string',
             'duration' => 'sometimes|integer|min:1',
             'release_date' => 'sometimes|date',
             'status' => 'sometimes|in:now_showing,coming_soon,ended',
-            'poster_url' => 'nullable|url',
-            'trailer_url' => 'nullable|url',
-            'rating' => 'nullable|numeric|min:0|max:10',
+            'age_rating' => 'nullable|string|max:10',
+            'synopsis' => 'nullable|string',
+            'content' => 'nullable|string',
+            'poster_url' => 'nullable|string',
+            'trailer_url' => 'nullable|string',
             'genre_ids' => 'nullable|array',
-            'genre_ids.*' => 'exists:genres,id',
+            'genre_ids.*' => 'exists:genres,genre_id',
             'language_ids' => 'nullable|array',
-            'language_ids.*' => 'exists:languages,id',
+            'language_ids.*' => 'exists:languages,language_id',
         ]);
 
         if ($validator->fails()) {
+            \Illuminate\Support\Facades\Log::error('Movie Update Validation Failed', $validator->errors()->toArray());
             return response()->json([
                 'success' => false,
                 'errors' => $validator->errors(),
             ], 422);
         }
 
-        $movie->update($request->except(['genre_ids', 'language_ids']));
+        try {
+            // Use only() to avoid SQL errors with unknown columns
+            $fillable = $movie->getFillable();
+            // Important: Explicitly merge age_rating and new fields if they are not in fillable yet (cache issue?)
+            // Just in case, let's force them if they are missing from fillable but present in request
+            $data = $request->only($fillable);
 
-        // Sync relationships
-        if ($request->has('genre_ids')) {
-            $movie->genres()->sync($request->genre_ids);
+            // Ensure boolean for is_featured if passed
+            if ($request->has('is_featured')) {
+                $data['is_featured'] = filter_var($request->is_featured, FILTER_VALIDATE_BOOLEAN);
+            }
+
+            $movie->update($data);
+
+            // Sync relationships
+            if ($request->has('genre_ids')) {
+                $movie->genres()->sync($request->genre_ids);
+            }
+
+            if ($request->has('language_ids')) {
+                $movie->languages()->sync($request->language_ids);
+            }
+
+            $movie->load(['genres', 'languages']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Phim đã được cập nhật',
+                'data' => $movie,
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Movie Update Exception: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi server: ' . $e->getMessage(),
+            ], 500);
         }
-
-        if ($request->has('language_ids')) {
-            $movie->languages()->sync($request->language_ids);
-        }
-
-        $movie->load(['genres', 'languages']);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Phim đã được cập nhật',
-            'data' => $movie,
-        ]);
     }
 
     /**
@@ -152,20 +187,24 @@ class MovieController extends Controller
     {
         $movie = Movie::find($id);
 
-        if (! $movie) {
+        if (!$movie) {
             return response()->json([
                 'success' => false,
                 'message' => 'Phim không tồn tại',
             ], 404);
         }
 
-        // Kiểm tra xem phim có suất chiếu nào không
-        if ($movie->showtimes()->exists()) {
+        // Kiểm tra xem phim có booking nào không (an toàn dữ liệu)
+        // Nếu có showtime đã có người đặt vé => không cho xóa
+        if ($movie->showtimes()->whereHas('bookings')->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không thể xóa phim đang có suất chiếu. Hãy đổi status thành "ended" thay vì xóa.',
+                'message' => 'Không thể xóa phim đã có vé đặt. Hãy đổi status thành "ended" để ẩn phim.',
             ], 400);
         }
+
+        // Nếu chỉ có showtime rỗng (chưa ai đặt), cho phép xóa (cascade sẽ xóa showtime)
+
 
         $movie->delete();
 

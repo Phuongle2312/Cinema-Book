@@ -37,6 +37,19 @@ class Movie extends Model
         'is_featured' => 'boolean',
     ];
 
+    protected $appends = ['id', 'rating']; // Append 'id' and 'rating' to JSON output
+
+    public function getIdAttribute()
+    {
+        return $this->movie_id;
+    }
+
+    public function getRatingAttribute()
+    {
+        // Cache this if performance is an issue, but for now simple relation avg
+        return round($this->reviews()->avg('rating') ?? 0, 1);
+    }
+
     /**
      * Boot method - Tự động tạo slug khi tạo movie
      */
@@ -100,6 +113,12 @@ class Movie extends Model
     public function wishlists()
     {
         return $this->hasMany(Wishlist::class, 'movie_id', 'movie_id');
+    }
+
+    // Một phim có nhiều đánh giá
+    public function reviews()
+    {
+        return $this->hasMany(Review::class, 'movie_id', 'movie_id');
     }
 
     /**

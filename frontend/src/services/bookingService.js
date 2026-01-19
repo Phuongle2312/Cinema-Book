@@ -1,80 +1,88 @@
 import api from './api';
 
+// Base URL is already configured in api.js
+
 const bookingService = {
-    // Tạo mới booking (khóa ghế)
+    // Get seats for a showtime
+    getSeats: async (showtimeId) => {
+        // In real app: GET /api/showtimes/:id/seats
+        // Returns list of seats with status
+        const response = await api.get(`/showtimes/${showtimeId}/seats`);
+        return response.data.data;
+    },
+
+    // Hold seats
+    holdSeats: async (showtimeId, seatIds) => {
+        // POST /api/bookings/hold
+        const response = await api.post(`/bookings/hold`, {
+            showtime_id: showtimeId,
+            seat_ids: seatIds
+        });
+        return response.data;
+    },
+
+    // Create Booking
     createBooking: async (bookingData) => {
+        // POST /api/bookings
+        const response = await api.post(`/bookings`, bookingData);
+        return response.data;
+    },
+
+    // Get Booking Details (for Payment)
+    getBookingById: async (bookingId) => {
+        const response = await api.get(`/bookings/${bookingId}`);
+        return response.data;
+    },
+
+    // Verify Payment (Admin mostly)
+    verifyPayment: async (paymentData) => {
         try {
-            // Payload: { showtime_id, seat_ids: [], ... }
-            const response = await api.post('/bookings', bookingData);
+            const response = await api.post('/verify-payments', paymentData);
             return response.data;
         } catch (error) {
-            console.error('Create booking error:', error);
-            return {
-                success: false,
-                message: error.response?.data?.message || 'Đặt vé thất bại',
-                errors: error.response?.data?.errors || {}
-            };
+            console.error('Verify payment error:', error);
+            throw error;
         }
     },
 
-    // Lấy chi tiết booking (cho trang thanh toán)
-    getBookingById: async (id) => {
+    // Apply Offer (Voucher)
+    applyOffer: async (bookingId, offerCode) => {
         try {
-            const response = await api.get(`/bookings/${id}`);
+            const response = await api.post(`/bookings/${bookingId}/apply-offer`, { offer_code: offerCode });
             return response.data;
         } catch (error) {
-            console.error('Get booking error:', error);
-            return {
-                success: false,
-                message: error.response?.data?.message || 'Không thể lấy thông tin đơn hàng',
-                data: null
-            };
+            console.error('Apply offer error:', error);
+            throw error;
         }
     },
 
-    // Xử lý thanh toán
+    // Remove Offer (Reset to Auto or None)
+    removeOffer: async (bookingId) => {
+        try {
+            const response = await api.post(`/bookings/${bookingId}/remove-offer`);
+            return response.data;
+        } catch (error) {
+            console.error('Remove offer error:', error);
+            throw error;
+        }
+    },
+
+    // Process Payment
     processPayment: async (bookingId, paymentData) => {
-        try {
-            const response = await api.post(`/bookings/${bookingId}/pay`, paymentData);
-            return response.data;
-        } catch (error) {
-            console.error('Payment error:', error);
-            return {
-                success: false,
-                message: error.response?.data?.message || 'Thanh toán thất bại',
-                errors: error.response?.data?.errors || {}
-            };
-        }
+        const response = await api.post(`/bookings/${bookingId}/pay`, paymentData);
+        return response.data;
     },
 
-    // Lấy thông tin E-Ticket
+    // Get E-Ticket
     getETicket: async (bookingId) => {
-        try {
-            const response = await api.get(`/bookings/e-ticket/${bookingId}`);
-            return response.data;
-        } catch (error) {
-            console.error('Get E-Ticket error:', error);
-            return {
-                success: false,
-                message: error.response?.data?.message || 'Không thể lấy vé điện tử',
-                data: null
-            };
-        }
+        const response = await api.get(`/bookings/e-ticket/${bookingId}`);
+        return response.data;
     },
 
-    // Lấy lịch sử đặt vé của User
-    getUserBookings: async () => {
-        try {
-            const response = await api.get('/user/bookings');
-            return response.data;
-        } catch (error) {
-            console.error('Get user bookings error:', error);
-            return {
-                success: false,
-                message: error.response?.data?.message || 'Không thể lấy lịch sử đặt vé',
-                data: []
-            };
-        }
+    // Get User Bookings
+    getUserBookings: async (params) => {
+        const response = await api.get('/user/bookings', { params });
+        return response.data;
     }
 };
 

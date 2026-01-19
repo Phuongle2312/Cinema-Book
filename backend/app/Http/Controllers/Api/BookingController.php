@@ -4,15 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\BookingCombo;
-use App\Models\BookingSeat;
-use App\Models\Seat;
 use App\Models\SeatLock;
 use App\Models\Showtime;
 use App\Models\Transaction;
-use Carbon\Carbon;
+use App\Models\VerifyPayment;
+use App\Services\BookingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Offer;
 
 /**
  * BookingController
@@ -20,6 +19,13 @@ use Illuminate\Support\Facades\DB;
  */
 class BookingController extends Controller
 {
+    protected $bookingService;
+
+    public function __construct(BookingService $bookingService)
+    {
+        $this->bookingService = $bookingService;
+    }
+
     /**
      * POST /api/bookings
      * Tạo đơn đặt vé mới (khóa ghế trong 6 phút)
@@ -31,83 +37,72 @@ class BookingController extends Controller
             'seat_ids' => 'required|array|min:1',
             'seat_ids.*' => 'exists:seats,seat_id',
             'combos' => 'nullable|array',
-            'combos.*.combo_id' => 'required_with:combos|exists:combos,combo_id',
+            'combos.*.id' => 'required_with:combos|exists:combos,combo_id',
             'combos.*.quantity' => 'required_with:combos|integer|min:1',
         ]);
 
         try {
-            DB::beginTransaction();
-
             $user = $request->user();
-            $showtime = Showtime::with('movie')->findOrFail($request->showtime_id);
+            $showtime = Showtime::with(['movie', 'room.theater'])->findOrFail($request->showtime_id);
             $seatIds = $request->seat_ids;
+            $combos = $request->combos ?? [];
 
-            // 1. Kiểm tra ghế có available không
-            $this->validateSeatsAvailability($showtime->showtime_id, $seatIds);
+            // 1. Hold Seats (Logic concurrency nằm trong Service)
+            // Nếu muốn tách bước Hold và Booking ra 2 API riêng thì gọi holdSeats ở API khác.
+            // Nhưng theo flow hiện tại: "Tạo booking -> Pending -> Thanh toán", nên ta làm gộp.
+            // Tuy nhiên, để chặt chẽ, ta có thể gọi holdSeats trước.
 
-            // 2. Tạo booking
-            $booking = Booking::create([
-                'user_id' => $user->id,
-                'showtime_id' => $showtime->showtime_id,
-                'booking_code' => $this->generateBookingCode(),
-                'total_seats' => count($seatIds),
-                'seats_total' => 0, // Sẽ tính sau
-                'combo_total' => 0, // Sẽ tính sau
-                'total_price' => 0, // Sẽ tính sau
-                'status' => 'pending',
-                'expires_at' => Carbon::now()->addMinutes(6),
-            ]);
+            // $this->bookingService->holdSeats($user, $showtime, $seatIds);
 
-            // 3. Tạo booking seats và tính tổng tiền ghế
-            $seatsTotal = $this->createBookingSeats($booking, $seatIds, $showtime);
-
-            // 4. Tạo seat locks (khóa ghế trong 6 phút)
-            $this->createSeatLocks($user->id, $seatIds, $showtime->showtime_id);
-
-            // 5. Xử lý combos nếu có
-            $comboTotal = 0;
-            if ($request->has('combos')) {
-                $comboTotal = $this->addCombosToBooking($booking, $request->combos);
-            }
-
-            // 6. Cập nhật tổng tiền (bao gồm tự động áp dụng ưu đãi hệ thống)
-            $totalPrice = $seatsTotal + $comboTotal;
-
-            // Tìm các ưu đãi hệ thống đang active
-            $systemOffers = \App\Models\Offer::systemWide()->get();
-            $totalDiscount = 0;
-
-            foreach ($systemOffers as $offer) {
-                if (! $offer->min_purchase_amount || $totalPrice >= $offer->min_purchase_amount) {
-                    $totalDiscount += $offer->calculateDiscount($totalPrice - $totalDiscount);
-                }
-            }
-
-            $booking->update([
-                'seats_total' => $seatsTotal,
-                'combo_total' => $comboTotal,
-                'total_price' => max(0, $totalPrice - $totalDiscount),
-            ]);
-
-            DB::commit();
+            // 2. Create Booking (Pending)
+            // Service sẽ tự validate lại lock hoặc availability
+            $booking = $this->bookingService->createBooking($user, $showtime, $seatIds, $combos);
 
             // Load relationships để trả về
             $booking->load(['seats', 'combos', 'showtime.movie', 'showtime.room.theater']);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Đặt vé thành công. Vui lòng thanh toán trong 6 phút.',
+                'message' => 'Booking created successfully. Please pay within 6 minutes.',
                 'data' => $booking,
-                'expires_at' => $booking->expires_at->toISOString(),
-                'remaining_seconds' => $booking->expires_at->diffInSeconds(now()),
+                'expires_at' => $booking->expires_at ? $booking->expires_at->toISOString() : null,
+                'remaining_seconds' => $booking->remaining_time * 60,
             ], 201);
 
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return response()->json([
                 'success' => false,
-                'message' => 'Đặt vé thất bại: '.$e->getMessage(),
+                'message' => 'Booking failed: ' . $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    /**
+     * POST /api/bookings/hold
+     * API để giữ ghế tạm thời (cho bước chọn ghế trên Frontend)
+     */
+    public function hold(Request $request)
+    {
+        $request->validate([
+            'showtime_id' => 'required|exists:showtimes,showtime_id',
+            'seat_ids' => 'required|array|min:1',
+            'seat_ids.*' => 'exists:seats,seat_id',
+        ]);
+
+        try {
+            $user = $request->user();
+            $showtime = Showtime::findOrFail($request->showtime_id);
+
+            $this->bookingService->holdSeats($user, $showtime, $request->seat_ids);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Seats held successfully.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
             ], 400);
         }
     }
@@ -118,7 +113,7 @@ class BookingController extends Controller
      */
     public function show($id, Request $request)
     {
-        $booking = Booking::with(['seats', 'combos', 'showtime.movie', 'showtime.room.theater'])
+        $booking = Booking::with(['seats', 'combos', 'showtime.movie', 'showtime.room.theater', 'offer'])
             ->where('user_id', $request->user()->id)
             ->findOrFail($id);
 
@@ -138,13 +133,13 @@ class BookingController extends Controller
             'payment_method' => 'required|in:cash,credit_card,momo,zalopay,vnpay',
         ]);
 
-        $booking = Booking::with(['seats', 'combos', 'showtime.movie', 'showtime.room.theater'])->findOrFail($id);
+        $booking = Booking::with(['seats', 'showtime'])->findOrFail($id);
 
         // Kiểm tra quyền sở hữu
         if ($booking->user_id !== $request->user()->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Bạn không có quyền thanh toán booking này',
+                'message' => 'Unauthorized',
             ], 403);
         }
 
@@ -152,51 +147,50 @@ class BookingController extends Controller
         if ($booking->status !== 'pending') {
             return response()->json([
                 'success' => false,
-                'message' => 'Booking này đã được xử lý',
+                'message' => 'Booking is not pending',
             ], 400);
         }
 
         // Kiểm tra hết hạn
-        if ($booking->expires_at && $booking->expires_at->isPast()) {
-            $booking->update(['status' => 'expired']);
-
+        if ($booking->isExpired()) {
+            $booking->markAsExpired();
             return response()->json([
                 'success' => false,
-                'message' => 'Booking đã hết hạn',
+                'message' => 'Booking expired',
             ], 400);
         }
 
         try {
             DB::beginTransaction();
 
-            // 1. Tạo transaction
+            // Manual Verification Flow
+            // Update status to 'pending_verification' instead of confirming immediately
+            $booking->update(['status' => 'pending_verification']);
+
+            // Create Transaction
             $transaction = Transaction::create([
                 'booking_id' => $booking->booking_id,
                 'user_id' => $booking->user_id,
-                'transaction_code' => $this->generateTransactionCode(),
+                'transaction_code' => 'TXN' . date('YmdHis') . rand(1000, 9999),
                 'amount' => $booking->total_price,
                 'payment_method' => $request->payment_method,
-                'status' => 'success', // Dummy payment - luôn thành công
+                'status' => 'success', // Money transferred
                 'paid_at' => now(),
             ]);
 
-            // 2. Cập nhật booking status
-            $booking->update([
-                'status' => 'confirmed',
-                'confirmed_at' => now(),
+            // Create VerifyPayment Request (Pending Admin Review)
+            VerifyPayment::create([
+                'booking_id' => $booking->booking_id,
+                'user_id' => $booking->user_id,
+                'transaction_code' => $transaction->transaction_code,
+                'status' => 'pending', // Waiting for Admin
             ]);
-
-            // 3. Xóa seat locks
-            SeatLock::where('user_id', $booking->user_id)
-                ->whereIn('seat_id', $booking->seats->pluck('seat_id'))
-                ->where('showtime_id', $booking->showtime_id)
-                ->delete();
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Thanh toán thành công',
+                'message' => 'Payment successful. Waiting for Admin verification to issue ticket.',
                 'data' => [
                     'booking' => $booking,
                     'transaction' => $transaction,
@@ -205,12 +199,133 @@ class BookingController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-
             return response()->json([
                 'success' => false,
-                'message' => 'Thanh toán thất bại: '.$e->getMessage(),
+                'message' => 'Payment failed: ' . $e->getMessage(),
             ], 400);
         }
+    }
+
+    /**
+     * POST /api/bookings/{id}/apply-offer
+     * Áp dụng mã giảm giá (Voucher) - Thay thế Auto Offer nếu có
+     */
+    public function applyOffer($id, Request $request)
+    {
+        $request->validate([
+            'offer_code' => 'required|string',
+        ]);
+
+        $user = $request->user();
+        $booking = Booking::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->findOrFail($id);
+
+        // 1. Find Offer by Code
+        $offer = Offer::where('code', $request->offer_code)
+            ->active() // Ensure it is active
+            ->first();
+
+        if (!$offer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mã voucher không hợp lệ hoặc đã hết hạn.',
+            ], 400);
+        }
+
+        // 2. Validate Offer Conditions
+        // Date check (Covered by scopeActive but double check specific custom rules if needed)
+
+        // Usage Limit
+        if ($offer->max_uses && $offer->current_uses >= $offer->max_uses) {
+            return response()->json(['success' => false, 'message' => 'Mã giảm giá đã hết lượt sử dụng.'], 400);
+        }
+
+        // Min Purchase
+        $subtotal = $booking->seats_total + $booking->combo_total;
+
+        if ($offer->min_purchase_amount && $subtotal < $offer->min_purchase_amount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Đơn hàng cần tối thiểu ' . number_format($offer->min_purchase_amount) . ' VND để áp dụng mã này.'
+            ], 400);
+        }
+
+        // 3. Calculate Discount
+        $discountAmount = $offer->calculateDiscount($subtotal);
+
+        // 4. Update Booking (REPLACE existing offer)
+        $booking->offer_id = $offer->offer_id;
+        $booking->discount_amount = $discountAmount;
+        $booking->total_price = max(0, $subtotal - $discountAmount);
+        $booking->save();
+
+        // Refresh to get full data
+        $booking->load(['seats', 'combos', 'showtime.movie', 'showtime.room.theater', 'offer']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Áp dụng mã giảm giá thành công!',
+            'data' => $booking,
+        ]);
+    }
+
+    /**
+     * POST /api/bookings/{id}/remove-offer
+     * Hủy áp dụng mã giảm giá -> Tự động tính lại Auto Offer (nếu có)
+     */
+    public function removeOffer($id, Request $request)
+    {
+        $user = $request->user();
+        $booking = Booking::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->findOrFail($id);
+
+        // Reset to raw total
+        $subtotal = $booking->seats_total + $booking->combo_total;
+
+        // Re-calculate Auto Offer (System Wide) logic
+        // We can reuse the logic from BookingService or simple Check here.
+        // For DRY, ideally move "calculateBestAutoOffer" to a Service method.
+        // For now, implementing simplified check here.
+
+        $systemOffers = Offer::systemWide()->orderBy('discount_value', 'desc')->get();
+        $bestOffer = null;
+        $maxDiscount = 0;
+
+        foreach ($systemOffers as $offer) {
+            if ($offer->isValid()) {
+                if ($offer->min_purchase_amount && $subtotal < $offer->min_purchase_amount) {
+                    continue;
+                }
+                $discount = $offer->calculateDiscount($subtotal);
+                if ($discount > $maxDiscount) {
+                    $maxDiscount = $discount;
+                    $bestOffer = $offer;
+                }
+            }
+        }
+
+        if ($bestOffer) {
+            $booking->offer_id = $bestOffer->offer_id;
+            $booking->discount_amount = $maxDiscount;
+            $booking->total_price = max(0, $subtotal - $maxDiscount);
+            $msg = 'Đã hủy voucher. Hệ thống tự động áp dụng khuyến mãi tốt nhất hiện có.';
+        } else {
+            $booking->offer_id = null;
+            $booking->discount_amount = 0;
+            $booking->total_price = $subtotal;
+            $msg = 'Đã hủy áp dụng mã giảm giá.';
+        }
+
+        $booking->save();
+        $booking->load(['seats', 'combos', 'showtime.movie', 'showtime.room.theater', 'offer']);
+
+        return response()->json([
+            'success' => true,
+            'message' => $msg,
+            'data' => $booking
+        ]);
     }
 
     /**
@@ -228,18 +343,19 @@ class BookingController extends Controller
             'transaction',
         ])->findOrFail($id);
 
-        // Kiểm tra booking đã confirmed
-        if ($booking->status !== 'confirmed') {
+        // Kiểm tra booking đã confirmed hoặc pending_verification
+        if ($booking->status !== 'confirmed' && $booking->status !== 'pending_verification') {
             return response()->json([
                 'success' => false,
-                'message' => 'Vé chưa được thanh toán',
+                'message' => 'Ticket not paid or expired',
             ], 400);
         }
 
         // Format dữ liệu e-ticket
         $eTicket = [
             'booking_code' => $booking->booking_code,
-            'qr_code' => $this->generateQRCode($booking->booking_code),
+            'status' => $booking->status, // Add status here
+            'qr_code' => $this->bookingService->generateQRCode($booking->booking_code),
             'movie' => [
                 'title' => $booking->showtime->movie->title,
                 'poster' => $booking->showtime->movie->poster_url,
@@ -259,7 +375,7 @@ class BookingController extends Controller
                 return [
                     'row' => $seat->row,
                     'number' => $seat->number,
-                    'label' => $seat->row.$seat->number,
+                    'label' => $seat->row . $seat->number,
                 ];
             }),
             'combos' => $booking->combos->map(function ($combo) {
@@ -302,20 +418,23 @@ class BookingController extends Controller
             'transaction',
         ])->where('user_id', $user->id);
 
-        // Lọc theo trạng thái
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+        // Filter by Type (Upcoming / Past)
+        if ($request->has('type')) {
+            $now = now();
+            if ($request->type === 'upcoming') {
+                $query->whereHas('showtime', function ($q) use ($now) {
+                    $q->where('start_time', '>', $now);
+                });
+            } elseif ($request->type === 'past') {
+                $query->whereHas('showtime', function ($q) use ($now) {
+                    $q->where('start_time', '<=', $now);
+                });
+            }
         }
 
-        // Lọc theo thời gian (upcoming/past)
-        if ($request->get('type') === 'upcoming') {
-            $query->whereHas('showtime', function ($q) {
-                $q->where('start_time', '>', now());
-            });
-        } elseif ($request->get('type') === 'past') {
-            $query->whereHas('showtime', function ($q) {
-                $q->where('start_time', '<=', now());
-            });
+        // Filter by Status (existing)
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
         }
 
         $bookings = $query->orderBy('created_at', 'desc')->paginate(10);
@@ -329,138 +448,5 @@ class BookingController extends Controller
                 'total' => $bookings->total(),
             ],
         ]);
-    }
-
-    // ==================== HELPER METHODS ====================
-
-    /**
-     * Kiểm tra ghế có available không
-     */
-    private function validateSeatsAvailability($showtimeId, $seatIds)
-    {
-        // Kiểm tra ghế đã được đặt (Confirmed) hoặc đang chờ thanh toán (Pending + Chưa hết hạn)
-        $bookedSeats = BookingSeat::whereHas('booking', function ($query) use ($showtimeId) {
-            $query->where('showtime_id', $showtimeId)
-                ->where(function ($q) {
-                    $q->where('status', 'confirmed')
-                        ->orWhere(function ($sq) {
-                            $sq->where('status', 'pending')
-                                ->where('expires_at', '>', Carbon::now());
-                        });
-                });
-        })->whereIn('seat_id', $seatIds)->count();
-
-        if ($bookedSeats > 0) {
-            throw new \Exception('Một số ghế đã được đặt');
-        }
-
-        // Kiểm tra ghế đang bị lock
-        $lockedSeats = SeatLock::where('showtime_id', $showtimeId)
-            ->whereIn('seat_id', $seatIds)
-            ->where('expires_at', '>', Carbon::now())
-            ->count();
-
-        if ($lockedSeats > 0) {
-            throw new \Exception('Một số ghế đang được giữ bởi người khác');
-        }
-    }
-
-    /**
-     * Tạo booking seats
-     */
-    private function createBookingSeats($booking, $seatIds, $showtime)
-    {
-        $total = 0;
-        $seats = Seat::whereIn('seat_id', $seatIds)->get();
-
-        foreach ($seats as $seat) {
-            $price = $showtime->base_price + $seat->extra_price;
-
-            BookingSeat::create([
-                'booking_id' => $booking->booking_id,
-                'seat_id' => $seat->seat_id,
-                'showtime_id' => $showtime->showtime_id,
-                'price' => $price,
-            ]);
-
-            $total += $price;
-        }
-
-        return $total;
-    }
-
-    /**
-     * Tạo seat locks
-     */
-    private function createSeatLocks($userId, $seatIds, $showtimeId)
-    {
-        $expiresAt = Carbon::now()->addMinutes(6);
-
-        foreach ($seatIds as $seatId) {
-            SeatLock::create([
-                'seat_id' => $seatId,
-                'showtime_id' => $showtimeId,
-                'user_id' => $userId,
-                'locked_at' => now(),
-                'expires_at' => $expiresAt,
-            ]);
-        }
-    }
-
-    /**
-     * Thêm combos vào booking
-     */
-    private function addCombosToBooking($booking, $combos)
-    {
-        $total = 0;
-
-        foreach ($combos as $comboData) {
-            $combo = \App\Models\Combo::find($comboData['combo_id']);
-            $quantity = $comboData['quantity'];
-            $comboTotal = $combo->price * $quantity;
-
-            BookingCombo::create([
-                'booking_id' => $booking->booking_id,
-                'combo_id' => $combo->combo_id,
-                'quantity' => $quantity,
-                'unit_price' => $combo->price,
-                'total_price' => $comboTotal,
-            ]);
-
-            $total += $comboTotal;
-        }
-
-        return $total;
-    }
-
-    /**
-     * Generate booking code
-     */
-    private function generateBookingCode()
-    {
-        return 'BK'.date('Ymd').str_pad(
-            Booking::whereDate('created_at', today())->count() + 1,
-            4,
-            '0',
-            STR_PAD_LEFT
-        );
-    }
-
-    /**
-     * Generate transaction code
-     */
-    private function generateTransactionCode()
-    {
-        return 'TXN'.date('YmdHis').rand(1000, 9999);
-    }
-
-    /**
-     * Generate QR code data
-     */
-    private function generateQRCode($bookingCode)
-    {
-        // Trong thực tế, bạn sẽ dùng thư viện QR code
-        // Ở đây chỉ return URL để generate QR
-        return 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='.$bookingCode;
     }
 }

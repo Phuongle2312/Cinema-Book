@@ -38,7 +38,7 @@ class SeatLock extends Model
         static::creating(function ($lock) {
             if (empty($lock->expires_at)) {
                 // Lấy timeout từ config (mặc định 6 phút)
-                $timeout = config('app.seat_lock_timeout', 6);
+                $timeout = (int) config('app.seat_lock_timeout', 6);
                 $lock->expires_at = Carbon::now()->addMinutes($timeout);
             }
         });

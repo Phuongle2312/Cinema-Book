@@ -28,7 +28,14 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
+                'regex:/[a-z]/', // at least one lowercase letter
+                'regex:/[A-Z]/', // at least one uppercase letter
+            ],
             'phone' => 'nullable|string|max:15',
             'date_of_birth' => 'nullable|date',
         ]);
@@ -53,7 +60,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Đăng ký thành công',
+            'message' => 'Registration successful',
             'data' => [
                 'user' => $user,
                 'token' => $token,
@@ -80,10 +87,10 @@ class AuthController extends Controller
             ], 422);
         }
 
-        if (! Auth::attempt($request->only('email', 'password'))) {
+        if (!Auth::attempt($request->only('email', 'password'))) {
             return response()->json([
                 'success' => false,
-                'message' => 'Email hoặc mật khẩu không đúng',
+                'message' => 'Invalid email or password',
             ], 401);
         }
 
@@ -92,7 +99,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Đăng nhập thành công',
+            'message' => 'Login successful',
             'data' => [
                 'user' => $user,
                 'token' => $token,
@@ -119,7 +126,7 @@ class AuthController extends Controller
         // Luôn trả về success để đảm bảo client không bị lỗi 401
         return response()->json([
             'success' => true,
-            'message' => 'Đăng xuất thành công',
+            'message' => 'Logout successful',
         ]);
     }
 
@@ -145,6 +152,7 @@ class AuthController extends Controller
             'name' => 'sometimes|string|max:255',
             'phone' => 'sometimes|string|max:15',
             'date_of_birth' => 'sometimes|date',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -155,11 +163,23 @@ class AuthController extends Controller
         }
 
         $user = $request->user();
-        $user->update($request->only(['name', 'phone', 'date_of_birth']));
+        $data = $request->only(['name', 'phone', 'date_of_birth']);
+
+        // Handle Avatar Upload
+        if ($request->hasFile('avatar')) {
+            // Delete old avatar if exists (optional logic, skipping for simplicity or check if exists)
+            // if ($user->avatar && Storage::exists($user->avatar)) { ... }
+
+            $path = $request->file('avatar')->store('avatars', 'public');
+            // Generate full URL
+            $data['avatar'] = asset('storage/' . $path);
+        }
+
+        $user->update($data);
 
         return response()->json([
             'success' => true,
-            'message' => 'Cập nhật thông tin thành công',
+            'message' => 'Profile updated successfully',
             'data' => $user,
         ]);
     }
@@ -184,7 +204,7 @@ class AuthController extends Controller
 
             $user = User::where('email', $googleUser->email)->first();
 
-            if (! $user) {
+            if (!$user) {
                 $user = User::create([
                     'name' => $googleUser->name,
                     'email' => $googleUser->email,
@@ -205,7 +225,7 @@ class AuthController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Đăng nhập Google thành công',
+                'message' => 'Google login successful',
                 'data' => [
                     'user' => $user,
                     'token' => $token,
@@ -216,7 +236,7 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Đăng nhập Google thất bại: '.$e->getMessage(),
+                'message' => 'Google login failed: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -241,7 +261,7 @@ class AuthController extends Controller
 
             $user = User::where('email', $facebookUser->email)->first();
 
-            if (! $user) {
+            if (!$user) {
                 $user = User::create([
                     'name' => $facebookUser->name,
                     'email' => $facebookUser->email,
@@ -262,7 +282,7 @@ class AuthController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Đăng nhập Facebook thành công',
+                'message' => 'Facebook login successful',
                 'data' => [
                     'user' => $user,
                     'token' => $token,
@@ -273,7 +293,7 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Đăng nhập Facebook thất bại: '.$e->getMessage(),
+                'message' => 'Facebook login failed: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -309,12 +329,12 @@ class AuthController extends Controller
         ]);
 
         // Gửi email (giả định - log ra console)
-        \Log::info('Password Reset Token for '.$request->email.': '.$token);
-        \Log::info('Reset URL: '.url('/reset-password?token='.$token.'&email='.$request->email));
+        \Log::info('Password Reset Token for ' . $request->email . ': ' . $token);
+        \Log::info('Reset URL: ' . url('/reset-password?token=' . $token . '&email=' . $request->email));
 
         return response()->json([
             'success' => true,
-            'message' => 'Email khôi phục mật khẩu đã được gửi',
+            'message' => 'Password reset email sent',
             'debug_token' => config('app.debug') ? $token : null, // Chỉ hiển thị khi debug
         ]);
     }
@@ -343,18 +363,18 @@ class AuthController extends Controller
             ->where('email', $request->email)
             ->first();
 
-        if (! $passwordReset) {
+        if (!$passwordReset) {
             return response()->json([
                 'success' => false,
-                'message' => 'Token không hợp lệ hoặc đã hết hạn',
+                'message' => 'Invalid or expired token',
             ], 400);
         }
 
         // Verify token
-        if (! Hash::check($request->token, $passwordReset->token)) {
+        if (!Hash::check($request->token, $passwordReset->token)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Token không hợp lệ',
+                'message' => 'Invalid token',
             ], 400);
         }
 
@@ -362,7 +382,7 @@ class AuthController extends Controller
         if (Carbon::parse($passwordReset->created_at)->addMinutes(60)->isPast()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Token đã hết hạn',
+                'message' => 'Token expired',
             ], 400);
         }
 
@@ -376,7 +396,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Mật khẩu đã được đặt lại thành công',
+            'message' => 'Password reset successfully',
         ]);
     }
 }

@@ -29,6 +29,7 @@ class User extends Authenticatable
         'provider',        // google, facebook
         'provider_id',     // ID từ provider
         'user_level',      // 1: Free, 2: Bought, 3: Watched
+        'avatar',          // Avatar URL
     ];
 
     /**
@@ -105,6 +106,6 @@ class User extends Authenticatable
     // Kiểm tra user đăng nhập bằng social login không
     public function isSocialLogin(): bool
     {
-        return ! empty($this->provider);
+        return !empty($this->provider);
     }
 }

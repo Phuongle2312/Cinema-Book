@@ -29,10 +29,15 @@ class TheaterController extends Controller
 
         // Search by name
         if ($request->has('search')) {
-            $query->where('name', 'like', '%'.$request->search.'%');
+            $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        $theaters = $query->orderBy('created_at', 'desc')->paginate(15);
+        // Check for 'all' parameter to return all theaters (e.g. for dropdowns or full list)
+        if ($request->has('all')) {
+            $theaters = $query->orderBy('created_at', 'desc')->get();
+        } else {
+            $theaters = $query->orderBy('created_at', 'desc')->paginate(15);
+        }
 
         return response()->json([
             'success' => true,
@@ -78,7 +83,7 @@ class TheaterController extends Controller
     {
         $theater = Theater::find($id);
 
-        if (! $theater) {
+        if (!$theater) {
             return response()->json([
                 'success' => false,
                 'message' => 'Rạp không tồn tại',
@@ -117,7 +122,7 @@ class TheaterController extends Controller
     {
         $theater = Theater::find($id);
 
-        if (! $theater) {
+        if (!$theater) {
             return response()->json([
                 'success' => false,
                 'message' => 'Rạp không tồn tại',
@@ -137,6 +142,24 @@ class TheaterController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Rạp chiếu đã được xóa',
+        ]);
+    }
+    /**
+     * Get rooms for a specific theater
+     * GET /api/admin/theaters/{id}/rooms
+     */
+    public function getRooms($id)
+    {
+        $theater = Theater::find($id);
+        if (!$theater) {
+            return response()->json(['success' => false, 'message' => 'Rạp không tồn tại'], 404);
+        }
+
+        $rooms = $theater->rooms;
+
+        return response()->json([
+            'success' => true,
+            'data' => $rooms
         ]);
     }
 }

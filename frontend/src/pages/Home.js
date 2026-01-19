@@ -5,38 +5,54 @@ import Banner from '../components/Banner';
 import MovieCard from '../components/MovieCard';
 import Footer from '../components/Footer';
 import movieService from '../services/movieService';
+import offerService from '../services/offerService'; // Added
 import './Home.css';
-import { ChevronRight, Loader2, Calendar, Tag, TicketPercent } from 'lucide-react';
+import { ChevronRight, Loader2, Calendar, Tag, TicketPercent, MapPin, Film, Search } from 'lucide-react';
 import eventData from '../data/events.json';
+import OfferPopup from '../components/OfferPopup';
 
 const Home = () => {
     const [movies, setMovies] = useState([]);
+    const [comingSoonMovies, setComingSoonMovies] = useState([]);
+    const [offers, setOffers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchMovies = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true);
-                const response = await movieService.getFeaturedMovies();
-                // Map the data if necessary. Adjusted based on standard Laravel resource structure
-                const movieData = response.data || response;
+                const [moviesRes, comingSoonRes, offersRes] = await Promise.all([
+                    movieService.getFeaturedMovies(),
+                    movieService.getComingSoonMovies(),
+                    offerService.getOffers()
+                ]);
+
+                // Map the data if necessary
+                const movieData = moviesRes.data || moviesRes;
                 setMovies(Array.isArray(movieData) ? movieData : []);
+
+                const comingSoonData = comingSoonRes.data || comingSoonRes;
+                setComingSoonMovies(Array.isArray(comingSoonData) ? comingSoonData : []);
+
+                const offersData = offersRes.data || offersRes;
+                setOffers(Array.isArray(offersData) ? offersData : []);
             } catch (err) {
-                console.error("Failed to fetch movies:", err);
-                setError("Could not load movies at this time.");
+                console.error("Failed to fetch data:", err);
+                setError("Could not load content at this time.");
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchMovies();
+        fetchData();
     }, []);
 
     return (
         <div className="home-page">
             <Navbar />
+            <OfferPopup />
 
             {/* Cinematic Banner */}
             <Banner />
@@ -45,7 +61,7 @@ const Home = () => {
             <section className="movies-section container">
                 <div className="section-header">
                     <h2 className="section-title">Now Showing</h2>
-                    <a href="/movies" className="view-all">
+                    <a href="/movies?status=showing" className="view-all">
                         View All
                         <ChevronRight size={18} />
                     </a>
@@ -73,13 +89,45 @@ const Home = () => {
                                     rating: parseFloat(movie.rating) || 0,
                                     duration: movie.duration,
                                     genre: Array.isArray(movie.genres) ? movie.genres.map(g => g.name || g).slice(0, 2).join(', ') : (movie.genre || ''),
-                                    year: parseInt(movie.year) || new Date(movie.release_date).getFullYear() || new Date().getFullYear()
+                                    year: parseInt(movie.year) || new Date(movie.release_date).getFullYear() || new Date().getFullYear(),
+                                    age_rating: movie.age_rating || 'P'
                                 }}
                             />
                         ))}
                     </div>
                 )}
             </section>
+
+            {/* Coming Soon Section */}
+            {comingSoonMovies.length > 0 && (
+                <section className="movies-section container">
+                    <div className="section-header">
+                        <h2 className="section-title">Coming Soon</h2>
+                        <a href="/movies?status=coming_soon" className="view-all">
+                            View All
+                            <ChevronRight size={18} />
+                        </a>
+                    </div>
+                    <div className="movies-grid">
+                        {comingSoonMovies.slice(0, 5).map(movie => (
+                            <MovieCard
+                                key={movie.movie_id}
+                                movie={{
+                                    id: movie.movie_id,
+                                    slug: movie.slug,
+                                    title: movie.title,
+                                    poster: movie.poster_url || movie.image,
+                                    rating: parseFloat(movie.rating) || 0,
+                                    duration: movie.duration,
+                                    genre: Array.isArray(movie.genres) ? movie.genres.map(g => g.name || g).slice(0, 2).join(', ') : (movie.genre || ''),
+                                    year: parseInt(movie.year) || new Date(movie.release_date).getFullYear() || new Date().getFullYear(),
+                                    age_rating: movie.age_rating || 'P'
+                                }}
+                            />
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {/* Offers Section */}
             <section className="events-section container">
@@ -92,8 +140,8 @@ const Home = () => {
                 </div>
 
                 <div className="events-grid">
-                    {eventData.filter(item => item.type === 'offer').slice(0, 3).map(offer => (
-                        <div key={offer.id} className="event-card" onClick={() => navigate(`/promotion/${offer.id}`)} style={{ cursor: 'pointer' }}>
+                    {offers.filter(item => item.type === 'offer').slice(0, 3).map(offer => (
+                        <div key={offer.id} className="event-card" onClick={() => navigate(`/offers/${offer.id}`)} style={{ cursor: 'pointer' }}>
                             <div className="event-image">
                                 <img src={offer.image} alt={offer.title} />
                                 <div className="event-tag" style={{ backgroundColor: '#eab308', color: '#000' }}>
@@ -110,7 +158,7 @@ const Home = () => {
                                 <p className="event-description">{offer.description}</p>
                                 <button className="event-btn" onClick={(e) => {
                                     e.stopPropagation();
-                                    navigate(`/promotion/${offer.id}`);
+                                    navigate(`/offers/${offer.id}`);
                                 }}>Get Offer</button>
                             </div>
                         </div>
@@ -129,8 +177,8 @@ const Home = () => {
                 </div>
 
                 <div className="events-grid">
-                    {eventData.filter(item => item.type === 'event').slice(0, 3).map(event => (
-                        <div key={event.id} className="event-card" onClick={() => navigate(`/promotion/${event.id}`)} style={{ cursor: 'pointer' }}>
+                    {offers.filter(item => item.type === 'event').slice(0, 3).map(event => (
+                        <div key={event.id} className="event-card" onClick={() => navigate(`/offers/${event.id}`)} style={{ cursor: 'pointer' }}>
                             <div className="event-image">
                                 <img src={event.image} alt={event.title} />
                                 <div className="event-tag">
@@ -147,7 +195,7 @@ const Home = () => {
                                 <p className="event-description">{event.description}</p>
                                 <button className="event-btn" onClick={(e) => {
                                     e.stopPropagation();
-                                    navigate(`/promotion/${event.id}`);
+                                    navigate(`/offers/${event.id}`);
                                 }}>Learn More</button>
                             </div>
                         </div>

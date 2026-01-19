@@ -26,3 +26,6 @@ build/
 # PHP
 composer.phar
 composer.lock
+
+.agent/
+.gemini/

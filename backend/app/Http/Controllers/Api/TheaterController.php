@@ -20,13 +20,15 @@ class TheaterController extends Controller
     {
         $query = Theater::query();
 
-        // Lọc theo thành phố
+        // Lọc theo thành phố (theo tên từ relationship City)
         if ($request->has('city')) {
-            $query->where('city', $request->city);
+            $query->whereHas('city', function ($q) use ($request) {
+                $q->where('name', $request->city);
+            });
         }
 
-        // Lấy danh sách rạp với số lượng rooms
-        $query->withCount('rooms');
+        // Lấy danh sách rạp với số lượng rooms và thông tin thành phố
+        $query->withCount('rooms')->with('city');
 
         $theaters = $query->orderBy('name')->get();
 
@@ -44,7 +46,7 @@ class TheaterController extends Controller
     {
         $theater = Theater::with('rooms')->find($id);
 
-        if (! $theater) {
+        if (!$theater) {
             return response()->json([
                 'success' => false,
                 'message' => 'Không tìm thấy rạp',

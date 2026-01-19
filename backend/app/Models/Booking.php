@@ -27,6 +27,9 @@ class Booking extends Model
         'status',
         'expires_at',
         'confirmed_at',
+        'discount_amount',
+        'offer_id',
+        'reminder_sent_at',
     ];
 
     protected $casts = [
@@ -35,6 +38,8 @@ class Booking extends Model
         'total_price' => 'decimal:0',
         'expires_at' => 'datetime',
         'confirmed_at' => 'datetime',
+        'reminder_sent_at' => 'datetime',
+        'discount_amount' => 'decimal:0',
     ];
 
     /**
@@ -47,7 +52,7 @@ class Booking extends Model
         static::creating(function ($booking) {
             // Tạo booking code unique (VD: BK20231217001)
             if (empty($booking->booking_code)) {
-                $booking->booking_code = 'BK'.date('Ymd').str_pad(
+                $booking->booking_code = 'BK' . date('Ymd') . str_pad(
                     static::whereDate('created_at', today())->count() + 1,
                     3,
                     '0',
@@ -57,7 +62,7 @@ class Booking extends Model
 
             // Set expires_at = 6 phút từ bây giờ (nếu chưa set)
             if (empty($booking->expires_at) && $booking->status === 'pending') {
-                $booking->expires_at = Carbon::now()->addMinutes(config('app.seat_lock_timeout', 6));
+                $booking->expires_at = Carbon::now()->addMinutes((int) config('app.seat_lock_timeout', 6));
             }
         });
     }
@@ -116,10 +121,15 @@ class Booking extends Model
         return $this->hasMany(BookingCombo::class, 'booking_id', 'booking_id');
     }
 
-    // Booking có thể có một review
     public function review()
     {
         return $this->hasOne(Review::class, 'booking_id', 'booking_id');
+    }
+
+    // Booking có thể áp dụng 1 offer
+    public function offer()
+    {
+        return $this->belongsTo(Offer::class, 'offer_id');
     }
 
     /**
@@ -198,6 +208,12 @@ class Booking extends Model
         return $this;
     }
 
+    // Kiểm tra booking đang chờ duyệt
+    public function isPendingVerification(): bool
+    {
+        return $this->status === 'pending_verification';
+    }
+
     // Hủy booking
     public function cancel()
     {
@@ -208,6 +224,9 @@ class Booking extends Model
             ->whereIn('seat_id', $this->seats->pluck('seat_id'))
             ->where('showtime_id', $this->showtime_id)
             ->delete();
+
+        // Xóa chi tiết ghế để tránh lỗi Duplicate Key
+        $this->bookingDetails()->delete();
 
         // Cập nhật available_seats của showtime
         $this->showtime->increment('available_seats', $this->total_seats);
@@ -225,6 +244,9 @@ class Booking extends Model
             ->whereIn('seat_id', $this->seats->pluck('seat_id'))
             ->where('showtime_id', $this->showtime_id)
             ->delete();
+
+        // Xóa chi tiết ghế để tránh lỗi Duplicate Key
+        $this->bookingDetails()->delete();
 
         // Cập nhật available_seats
         $this->showtime->increment('available_seats', $this->total_seats);
@@ -247,7 +269,7 @@ class Booking extends Model
     // Lấy thời gian còn lại để thanh toán (phút)
     public function getRemainingTimeAttribute()
     {
-        if ($this->status !== 'pending' || ! $this->expires_at) {
+        if ($this->status !== 'pending' || !$this->expires_at) {
             return 0;
         }
 

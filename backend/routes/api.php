@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\ShowtimeController;
 use App\Http\Controllers\Api\TheaterController;
 use App\Http\Controllers\Api\VerifyPaymentController;
 use App\Http\Controllers\Api\WishlistController;
+use App\Http\Controllers\Api\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -50,13 +51,19 @@ Route::prefix('movies')->group(function () {
     Route::get('/search', [MovieController::class, 'search']);
     Route::get('/filter', [MovieController::class, 'filter']);
     Route::get('/{slug_or_id}', [MovieController::class, 'show']);
+
+    // REVIEWS (Public read, check inside controller for optional auth)
+    Route::get('/{id}/reviews', [ReviewController::class, 'index']);
 });
 
-// THEATERS
+// THEATERS & CITIES
 Route::prefix('theaters')->group(function () {
     Route::get('/', [TheaterController::class, 'index']);
     Route::get('/{id}', [TheaterController::class, 'show']);
 });
+Route::get('/cities', [\App\Http\Controllers\Api\CityController::class, 'index']);
+Route::get('/genres', [\App\Http\Controllers\Api\GenreController::class, 'index']); // Added
+Route::get('/languages', [\App\Http\Controllers\Api\LanguageController::class, 'index']); // Added
 
 // SHOWTIMES
 Route::prefix('showtimes')->group(function () {
@@ -75,6 +82,8 @@ Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout']);
 // ============================================
 // PROTECTED ROUTES
 // ============================================
+Route::middleware('auth:sanctum')->get('/debug/check-bookings/{movieId}', [App\Http\Controllers\Api\DebugController::class, 'checkBookings']);
+
 Route::middleware('auth:sanctum')->group(function () {
 
     // USER
@@ -95,10 +104,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('bookings')->group(function () {
         Route::get('/', [BookingController::class, 'userBookings']);
         Route::get('/{id}', [BookingController::class, 'show']);
+        Route::post('/hold', [BookingController::class, 'hold']);
+        Route::post('/{id}/apply-offer', [BookingController::class, 'applyOffer']); // Voucher
         Route::post('/', [BookingController::class, 'store']);
         Route::post('/{id}/pay', [BookingController::class, 'pay']);
+        Route::post('/{id}/remove-offer', [BookingController::class, 'removeOffer']);
         Route::get('/e-ticket/{id}', [BookingController::class, 'eTicket']);
     });
+
+    // REVIEWS (Protected write)
+    Route::post('/movies/{id}/reviews', [ReviewController::class, 'store']);
 
     // VERIFY PAYMENTS
     Route::prefix('verify-payments')->group(function () {
@@ -119,7 +134,13 @@ Route::middleware('auth:sanctum')->group(function () {
 // ADMIN ROUTES
 // ============================================
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\Api\Admin\AdminDashboardController::class, 'stats']);
+    Route::apiResource('users', \App\Http\Controllers\Api\Admin\UserController::class);
     Route::apiResource('theaters', \App\Http\Controllers\Api\Admin\TheaterController::class);
+    Route::get('theaters/{id}/rooms', [\App\Http\Controllers\Api\Admin\TheaterController::class, 'getRooms']);
     Route::apiResource('movies', \App\Http\Controllers\Api\Admin\MovieController::class);
     Route::apiResource('showtimes', \App\Http\Controllers\Api\Admin\ShowtimeController::class);
+    Route::apiResource('offers', \App\Http\Controllers\Api\Admin\OfferController::class);
+    Route::apiResource('reviews', \App\Http\Controllers\Api\Admin\ReviewController::class);
+    Route::apiResource('bookings', \App\Http\Controllers\Api\Admin\BookingController::class);
 });

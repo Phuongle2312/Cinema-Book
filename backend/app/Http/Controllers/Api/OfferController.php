@@ -55,24 +55,24 @@ class OfferController extends Controller
 
         $offer = Offer::where('code', $code)->first();
 
-        if (! $offer) {
+        if (!$offer) {
             return response()->json([
                 'success' => false,
-                'message' => 'Mã ưu đãi không tồn tại',
+                'message' => 'Offer code does not exist',
             ], 404);
         }
 
-        if (! $offer->isValid()) {
+        if (!$offer->isValid()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Mã ưu đãi đã hết hạn hoặc không còn hiệu lực',
+                'message' => 'Offer code has expired or is invalid',
             ], 400);
         }
 
         if ($offer->min_purchase_amount && $amount < $offer->min_purchase_amount) {
             return response()->json([
                 'success' => false,
-                'message' => 'Đơn hàng chưa đủ giá trị tối thiểu để áp dụng ưu đãi này',
+                'message' => 'Order does not meet the minimum value for this offer',
             ], 400);
         }
 
@@ -80,7 +80,7 @@ class OfferController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Áp dụng ưu đãi thành công',
+            'message' => 'Offer applied successfully',
             'data' => [
                 'offer' => $offer,
                 'discount_amount' => $discount,

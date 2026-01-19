@@ -24,7 +24,7 @@ class Showtime extends Model
         'status',
     ];
 
-    protected $appends = ['format'];
+    protected $appends = ['format', 'show_date', 'show_time'];
 
     protected $casts = [
         'start_time' => 'datetime',
@@ -45,6 +45,16 @@ class Showtime extends Model
         }
 
         return $this->start_time;
+    }
+
+    public function getShowDateAttribute()
+    {
+        return $this->start_time ? $this->start_time->format('Y-m-d') : null;
+    }
+
+    public function getShowTimeAttribute()
+    {
+        return $this->start_time ? $this->start_time->format('H:i') : null;
     }
 
     /**
@@ -120,7 +130,7 @@ class Showtime extends Model
         // Chẵn = Phụ Đề Anh, Lẻ = Phụ Đề Việt (giả lập để có dữ liệu 2 tab)
 
         $type = '2D';
-        if ($this->room && ! empty($this->room->screen_type)) {
+        if ($this->room && !empty($this->room->screen_type)) {
             $rawType = $this->room->screen_type;
             if ($rawType === 'standard') {
                 $type = '2D';
@@ -132,8 +142,14 @@ class Showtime extends Model
         }
 
         // Return format string matches Frontend hardcoded tabs
-        // "2D Phụ Đề Anh", "2D Phụ Đề Việt"
-        $lang = ($this->showtime_id % 2 == 0) ? 'Phụ Đề Anh' : 'Phụ Đề Việt';
+        // Frontend expects: "2D Sub", "3D Sub", "IMAX"
+
+        $lang = ($this->showtime_id % 2 == 0) ? 'Sub' : 'Sub'; // Simplification: All movies are Subbed for now to match filters
+
+        // Custom logic for IMAX
+        if ($type === 'IMAX') {
+            return 'IMAX';
+        }
 
         return "$type $lang";
     }

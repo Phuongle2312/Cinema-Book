@@ -31,7 +31,7 @@ class ShowtimeController extends Controller
         // 2. Lọc theo Thành phố (QUAN TRỌNG: Khớp với giao diện Web bạn đang dùng)
         if ($request->filled('city')) {
             $query->whereHas('room.theater.city', function ($q) use ($request) {
-                $q->where('name', 'LIKE', '%'.$request->city.'%');
+                $q->where('name', 'LIKE', '%' . $request->city . '%');
             });
         }
 
@@ -45,6 +45,9 @@ class ShowtimeController extends Controller
         // 4. Lọc theo Ngày
         if ($request->filled('date')) {
             $query->whereDate('start_time', $request->date);
+            if ($request->date == Carbon::today()->toDateString()) {
+                $query->where('start_time', '>', Carbon::now());
+            }
         } else {
             $query->where('start_time', '>=', Carbon::now());
         }
@@ -75,10 +78,10 @@ class ShowtimeController extends Controller
 
         $showtime = Showtime::with(['room.theater', 'movie'])->find($id);
 
-        if (! $showtime) {
+        if (!$showtime) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không tìm thấy suất chiếu',
+                'message' => 'Showtime not found',
             ], 404);
         }
 
@@ -87,10 +90,10 @@ class ShowtimeController extends Controller
             ->orderBy('number')
             ->get();
 
-        // Lấy danh sách ghế đã đặt (confirmed) hoặc đang đợi thanh toán (pending + chưa hết hạn)
+        // Lấy danh sách ghế đã đặt (confirmed) hoặc đang đợi thanh toán (pending + chưa hết hạn) hoặc chờ duyệt (pending_verification)
         $bookedSeatIds = BookingSeat::where('showtime_id', $id)
             ->whereHas('booking', function ($query) {
-                $query->where('status', 'confirmed')
+                $query->whereIn('status', ['confirmed', 'pending_verification'])
                     ->orWhere(function ($q) {
                         $q->where('status', 'pending')
                             ->where('expires_at', '>', Carbon::now());

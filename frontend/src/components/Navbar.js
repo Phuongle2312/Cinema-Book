@@ -47,8 +47,7 @@ const Navbar = () => {
                     <ul className="nav-links">
                         <li><NavLink to="/movies">Movies</NavLink></li>
                         <li><NavLink to="/cinemas">Cinemas</NavLink></li>
-                        <li><NavLink to="/offers">Offers</NavLink></li>
-                        <li><NavLink to="/events">Events</NavLink></li>
+
                     </ul>
                 </div>
 
@@ -65,17 +64,19 @@ const Navbar = () => {
 
                     {isAuthenticated ? (
                         <div className="user-menu-container" style={{ position: 'relative' }}>
-                            <div 
-                                className="user-trigger" 
+                            <div
+                                className="user-trigger"
                                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                                 style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: 'white' }}
                             >
-                                <span className="user-name">Hi, {user?.name}</span>
-                                <div className="avatar-circle" style={{ width: '35px', height: '35px', borderRadius: '50%', background: '#e50914', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                                <span className="user-name">
+                                    {user?.role === 'admin' ? `Admin: ${user?.name}` : `Hi, ${user?.name}`}
+                                </span>
+                                <div className="avatar-circle" style={{ width: '35px', height: '35px', borderRadius: '50%', background: user?.role === 'admin' ? '#ffcc00' : '#e50914', color: user?.role === 'admin' ? '#000' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
                                     {user?.name?.charAt(0).toUpperCase()}
                                 </div>
                             </div>
-                            
+
                             {isUserMenuOpen && (
                                 <div className="user-dropdown" style={{
                                     position: 'absolute',
@@ -89,11 +90,23 @@ const Navbar = () => {
                                     boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
                                     zIndex: 1000
                                 }}>
-                                    <Link to="/user/profile" className="dropdown-item" style={{ display: 'block', padding: '10px 20px', color: '#fff', textDecoration: 'none', transition: 'background 0.2s' }} onClick={() => setIsUserMenuOpen(false)}>My Profile</Link>
-                                    <Link to="/user/bookings" className="dropdown-item" style={{ display: 'block', padding: '10px 20px', color: '#fff', textDecoration: 'none', transition: 'background 0.2s' }} onClick={() => setIsUserMenuOpen(false)}>My Bookings</Link>
-                                    {user?.role === 'admin' && (
-                                        <Link to="/admin/dashboard" className="dropdown-item" style={{ display: 'block', padding: '10px 20px', color: '#ffcc00', textDecoration: 'none', transition: 'background 0.2s' }} onClick={() => setIsUserMenuOpen(false)}>Admin Dashboard</Link>
+                                    {user?.role === 'admin' ? (
+                                        <>
+                                            <div style={{ padding: '10px 20px', fontSize: '12px', color: '#888', borderBottom: '1px solid #333', marginBottom: '5px' }}>
+                                                {user?.email}
+                                            </div>
+                                            <Link to="/admin/dashboard" className="dropdown-item" style={{ display: 'block', padding: '10px 20px', color: '#ffcc00', textDecoration: 'none', transition: 'background 0.2s' }} onClick={() => setIsUserMenuOpen(false)}>Admin Dashboard</Link>
+                                            <div style={{ padding: '10px 20px', fontSize: '12px', color: '#666', fontStyle: 'italic' }}>Authorized Access Only</div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div style={{ padding: '10px 20px', fontSize: '12px', color: '#888', borderBottom: '1px solid #333', marginBottom: '5px' }}>
+                                                {user?.email}
+                                            </div>
+                                            <Link to="/profile" className="dropdown-item" style={{ display: 'block', padding: '10px 20px', color: '#fff', textDecoration: 'none', transition: 'background 0.2s' }} onClick={() => setIsUserMenuOpen(false)}>My Profile</Link>
+                                        </>
                                     )}
+
                                     <div style={{ height: '1px', background: '#333', margin: '5px 0' }}></div>
                                     <button onClick={handleLogout} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 20px', background: 'none', border: 'none', color: '#ff4d4d', cursor: 'pointer', fontSize: '14px' }}>Logout</button>
                                 </div>
@@ -117,20 +130,19 @@ const Navbar = () => {
                 <ul>
                     <li><NavLink to="/movies" onClick={() => setIsMobileMenuOpen(false)}>Movies</NavLink></li>
                     <li><NavLink to="/cinemas" onClick={() => setIsMobileMenuOpen(false)}>Cinemas</NavLink></li>
-                    <li><NavLink to="/offers" onClick={() => setIsMobileMenuOpen(false)}>Offers</NavLink></li>
-                    <li><NavLink to="/events" onClick={() => setIsMobileMenuOpen(false)}>Events</NavLink></li>
+
                     {isAuthenticated ? (
                         <>
                             <li style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '10px', paddingTop: '10px' }}>
-                                <Link to="/user/profile" onClick={() => setIsMobileMenuOpen(false)} style={{ color: '#e50914' }}>Hi, {user?.name}</Link>
+                                <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} style={{ color: '#e50914' }}>Hi, {user?.name}</Link>
                             </li>
                             <li><Link to="/user/bookings" onClick={() => setIsMobileMenuOpen(false)}>My Bookings</Link></li>
                             {user?.role === 'admin' && (
                                 <li><Link to="/admin/dashboard" onClick={() => setIsMobileMenuOpen(false)}>Admin Dashboard</Link></li>
                             )}
                             <li>
-                                <button 
-                                    onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} 
+                                <button
+                                    onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
                                     style={{ background: 'none', border: 'none', color: '#ff4d4d', fontSize: '1.2rem', padding: '1rem', width: '100%', textAlign: 'left', cursor: 'pointer' }}
                                 >
                                     Logout

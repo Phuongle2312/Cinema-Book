@@ -15,7 +15,7 @@ class VerifyPaymentController extends Controller
      */
     public function index()
     {
-        if (! Auth::user()->isAdmin()) {
+        if (!Auth::user()->isAdmin()) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -62,7 +62,7 @@ class VerifyPaymentController extends Controller
      */
     public function verify(Request $request, $id)
     {
-        if (! Auth::user()->isAdmin()) {
+        if (!Auth::user()->isAdmin()) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -77,12 +77,20 @@ class VerifyPaymentController extends Controller
         // Cập nhật trạng thái booking
         $booking = Booking::find($vp->booking_id);
         if ($booking) {
-            $booking->update(['status' => 'confirmed']);
+            $booking->confirm();
 
             // Cập nhật level user nếu là lần đầu mua
             $user = $vp->user;
             if ($user->user_level < 2) {
                 $user->update(['user_level' => 2]);
+            }
+
+            // Send Email (Now sent ONLY after Admin Verification)
+            try {
+                \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\BookingConfirmationMail($booking));
+                \Log::info("Email sent to verified user: {$user->email}");
+            } catch (\Exception $e) {
+                \Log::error('Mail sending failed after verification: ' . $e->getMessage());
             }
         }
 

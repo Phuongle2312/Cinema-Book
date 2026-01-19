@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const checkAuth = async () => {
-            const token = localStorage.getItem('auth_token');
+            const token = sessionStorage.getItem('auth_token');
             if (token) {
                 try {
                     const userData = await authService.getProfile();
@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
                     setIsAuthenticated(true);
                 } catch (error) {
                     console.error('Auth verification failed:', error);
-                    localStorage.removeItem('auth_token');
+                    sessionStorage.removeItem('auth_token');
                     setUser(null);
                     setIsAuthenticated(false);
                 }
@@ -57,13 +57,26 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(false);
     };
 
+    const updateUser = async (userData) => {
+        const response = await authService.updateProfile(userData);
+        if (response.success && response.data) {
+            setUser(response.data);
+            return response;
+        } else {
+            throw response;
+        }
+    };
+
     const value = {
         user,
         isAuthenticated,
         isLoading,
         login,
         register,
-        logout
+        login,
+        register,
+        logout,
+        updateUser
     };
 
     return (

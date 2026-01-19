@@ -26,12 +26,11 @@ const MovieCard = ({ movie }) => {
                 </Link>
 
                 <div className="movie-meta">
-                    <span className="genre">{movie.genre?.split(',')[0] || 'Phim'}</span>
+                    <span className="age-rating">{movie.age_rating || 'P'}</span>
                     <span className="year">{movie.duration} min</span>
                 </div>
 
                 <Link to={bookingLink} className="btn-book flex items-center justify-center gap-2">
-                    <Ticket size={16} />
                     <span>Book Now</span>
                 </Link>
             </div>

@@ -23,10 +23,10 @@ class ReviewController extends Controller
     {
         // Kiểm tra phim có tồn tại không
         $movie = Movie::find($movieId);
-        if (! $movie) {
+        if (!$movie) {
             return response()->json([
                 'success' => false,
-                'message' => 'Phim không tồn tại',
+                'message' => 'Movie not found',
             ], 404);
         }
 
@@ -50,17 +50,26 @@ class ReviewController extends Controller
         if ($existingReview) {
             return response()->json([
                 'success' => false,
-                'message' => 'Bạn đã đánh giá phim này rồi',
+                'message' => 'You have already reviewed this movie',
             ], 400);
         }
 
         // Kiểm tra user đã xem phim này chưa (verified purchase)
+        // Lưu ý: Đã bỏ chặn bắt buộc mua vé (theo yêu cầu mới)
         $hasBooking = Booking::where('user_id', $request->user()->id)
             ->whereHas('showtime', function ($query) use ($movieId) {
                 $query->where('movie_id', $movieId);
             })
-            ->where('payment_status', 'completed')
+            ->whereIn('status', ['confirmed', 'completed'])
             ->exists();
+
+        if (!$hasBooking) {
+            // return response()->json([
+            //     'success' => false,
+            //     'message' => 'Bạn cần mua vé và xem phim này để có thể gửi đánh giá.',
+            // ], 403);
+            // ALLOW ALL USERS
+        }
 
         // Tạo review
         $review = Review::create([
@@ -69,14 +78,14 @@ class ReviewController extends Controller
             'rating' => $request->rating,
             'comment' => $request->comment,
             'is_verified_purchase' => $hasBooking,
-            'is_approved' => false, // Cần admin approve
+            'is_approved' => true, // Phê duyệt ngay lập tức
         ]);
 
         $review->load('user:id,name,avatar');
 
         return response()->json([
             'success' => true,
-            'message' => 'Đánh giá của bạn đã được gửi và đang chờ phê duyệt',
+            'message' => 'Your review has been posted successfully!',
             'data' => $review,
         ], 201);
     }
@@ -89,10 +98,10 @@ class ReviewController extends Controller
     {
         // Kiểm tra phim có tồn tại không
         $movie = Movie::find($movieId);
-        if (! $movie) {
+        if (!$movie) {
             return response()->json([
                 'success' => false,
-                'message' => 'Phim không tồn tại',
+                'message' => 'Movie not found',
             ], 404);
         }
 
@@ -100,7 +109,7 @@ class ReviewController extends Controller
         $order = $request->get('order', 'desc'); // asc hoặc desc
 
         $reviews = Review::where('movie_id', $movieId)
-            ->approved() // Chỉ lấy reviews đã được approve
+            // ->approved() // Lấy tất cả reviews
             ->with('user:id,name,avatar')
             ->orderBy($sortBy, $order)
             ->paginate(15);
@@ -109,21 +118,53 @@ class ReviewController extends Controller
         $stats = [
             'total_reviews' => $reviews->total(),
             'average_rating' => Review::where('movie_id', $movieId)
-                ->approved()
                 ->avg('rating'),
             'rating_distribution' => [
-                '5_star' => Review::where('movie_id', $movieId)->approved()->where('rating', 5)->count(),
-                '4_star' => Review::where('movie_id', $movieId)->approved()->where('rating', 4)->count(),
-                '3_star' => Review::where('movie_id', $movieId)->approved()->where('rating', 3)->count(),
-                '2_star' => Review::where('movie_id', $movieId)->approved()->where('rating', 2)->count(),
-                '1_star' => Review::where('movie_id', $movieId)->approved()->where('rating', 1)->count(),
+                '5_star' => Review::where('movie_id', $movieId)->where('rating', 5)->count(),
+                '4_star' => Review::where('movie_id', $movieId)->where('rating', 4)->count(),
+                '3_star' => Review::where('movie_id', $movieId)->where('rating', 3)->count(),
+                '2_star' => Review::where('movie_id', $movieId)->where('rating', 2)->count(),
+                '1_star' => Review::where('movie_id', $movieId)->where('rating', 1)->count(),
             ],
         ];
+
+        // Check permission if user is logged in
+        $userStatus = [
+            'can_review' => false,
+            'reason' => 'authentication_required'
+        ];
+
+        $user = $request->user('sanctum');
+
+        if ($user) {
+            $hasReviewed = Review::where('user_id', $user->id)->where('movie_id', $movieId)->exists();
+
+            \Illuminate\Support\Facades\Log::info("INDEX_CHECK: UserID=" . $user->id . " MovieID=" . $movieId);
+
+            // Check verified purchase
+            $hasBooking = Booking::where('user_id', $user->id)
+                ->whereHas('showtime', function ($query) use ($movieId) {
+                    $query->where('movie_id', $movieId);
+                })
+                ->whereIn('status', ['confirmed', 'completed']) // Check both
+                ->exists();
+
+            \Illuminate\Support\Facades\Log::info("INDEX_CHECK_HAS_BOOKING: " . ($hasBooking ? 'YES' : 'NO'));
+
+            if ($hasReviewed) {
+                $userStatus['reason'] = 'already_reviewed';
+            } else {
+                // Allow review regardless of booking
+                $userStatus['can_review'] = true;
+                $userStatus['reason'] = $hasBooking ? 'ok' : 'no_booking_but_allowed'; // Optional info
+            }
+        }
 
         return response()->json([
             'success' => true,
             'data' => $reviews,
             'stats' => $stats,
+            'user_status' => $userStatus
         ]);
     }
 }

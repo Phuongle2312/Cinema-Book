@@ -6,8 +6,8 @@ const authService = {
         try {
             const response = await api.post('/auth/register', userData);
             if (response.data.success && response.data.data.token) {
-                localStorage.setItem('auth_token', response.data.data.token);
-                localStorage.setItem('user', JSON.stringify(response.data.data.user));
+                sessionStorage.setItem('auth_token', response.data.data.token);
+                sessionStorage.setItem('user', JSON.stringify(response.data.data.user));
             }
             return response.data;
         } catch (error) {
@@ -25,8 +25,8 @@ const authService = {
         try {
             const response = await api.post('/auth/login', { email, password });
             if (response.data.success && response.data.data.token) {
-                localStorage.setItem('auth_token', response.data.data.token);
-                localStorage.setItem('user', JSON.stringify(response.data.data.user));
+                sessionStorage.setItem('auth_token', response.data.data.token);
+                sessionStorage.setItem('user', JSON.stringify(response.data.data.user));
             }
             return response.data;
         } catch (error) {
@@ -47,8 +47,8 @@ const authService = {
             console.error('Logout error:', error);
         } finally {
             // Always clear local storage
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('user');
+            sessionStorage.removeItem('auth_token');
+            sessionStorage.removeItem('user');
         }
     },
 
@@ -69,9 +69,21 @@ const authService = {
     // Update user profile
     updateProfile: async (userData) => {
         try {
-            const response = await api.put('/user/profile', userData);
+            let response;
+            // Check if userData is FormData (for file upload)
+            if (userData instanceof FormData) {
+                userData.append('_method', 'PUT');
+                response = await api.post('/user/profile', userData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+            } else {
+                response = await api.put('/user/profile', userData);
+            }
+
             if (response.data.success && response.data.data) {
-                localStorage.setItem('user', JSON.stringify(response.data.data));
+                sessionStorage.setItem('user', JSON.stringify(response.data.data));
             }
             return response.data;
         } catch (error) {
@@ -86,12 +98,12 @@ const authService = {
 
     // Check if user is authenticated
     isAuthenticated: () => {
-        return !!localStorage.getItem('auth_token');
+        return !!sessionStorage.getItem('auth_token');
     },
 
-    // Get current user from localStorage
+    // Get current user from sessionStorage
     getCurrentUser: () => {
-        const userStr = localStorage.getItem('user');
+        const userStr = sessionStorage.getItem('user');
         return userStr ? JSON.parse(userStr) : null;
     }
 };
